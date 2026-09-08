@@ -1,4 +1,6 @@
 import express from "express";
+import "dotenv/config";
+import { AppDataSource } from "./database/data-source";
 
 const app = express();
 
@@ -6,12 +8,20 @@ app.use(express.json());
 
 app.get("/", (request, response) => {
   return response.json({
-    message: "MedClinic API is running"
+    message: "MedClinic API is running",
   });
 });
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+AppDataSource.initialize()
+  .then(() => {
+    console.log("Database connected successfully");
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Error connecting to database:", error);
+  });
