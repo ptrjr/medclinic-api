@@ -1,15 +1,21 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { AuthService } from "../services/AuthService";
+import { AppError } from "../errors/AppError";
 
 export class AuthController {
-  async register(request: Request, response: Response) {
+  async register(
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) {
     try {
       const { name, email, password, role } = request.body;
 
       if (!name || !email || !password) {
-        return response.status(400).json({
-          message: "Nome, e-mail e senha são obrigatórios",
-        });
+        throw new AppError(
+          "Nome, e-mail e senha são obrigatórios",
+          400
+        );
       }
 
       const authService = new AuthService();
@@ -23,32 +29,23 @@ export class AuthController {
 
       return response.status(201).json(user);
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === "E-mail já cadastrado") {
-          return response.status(409).json({
-            message: error.message,
-          });
-        }
-
-        return response.status(400).json({
-          message: error.message,
-        });
-      }
-
-      return response.status(500).json({
-        message: "Erro interno do servidor",
-      });
+      return next(error);
     }
   }
 
-  async login(request: Request, response: Response) {
+  async login(
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) {
     try {
       const { email, password } = request.body;
 
       if (!email || !password) {
-        return response.status(400).json({
-          message: "E-mail e senha são obrigatórios",
-        });
+        throw new AppError(
+          "E-mail e senha são obrigatórios",
+          400
+        );
       }
 
       const authService = new AuthService();
@@ -57,17 +54,7 @@ export class AuthController {
 
       return response.status(200).json(result);
     } catch (error) {
-      if (error instanceof Error && error.message === "Credenciais inválidas") {
-        return response.status(401).json({
-          message: error.message,
-        });
-      }
-
-      console.error(error);
-
-      return response.status(500).json({
-        message: "Erro interno do servidor",
-      });
+      return next(error);
     }
   }
 }

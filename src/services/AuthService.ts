@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 
 import { UserRepository } from "../repositories/UserRepository";
 import { UserRole } from "../entities/user";
+import { AppError } from "../errors/AppError";
 
 interface RegisterUserDTO {
   name: string;
@@ -23,7 +24,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new Error("E-mail já cadastrado");
+      throw new AppError("E-mail já cadastrado", 409);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -48,7 +49,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new Error("Credenciais inválidas");
+      throw new AppError("Credenciais inválidas", 401);
     }
 
     const passwordMatches = await bcrypt.compare(
@@ -57,7 +58,7 @@ export class AuthService {
     );
 
     if (!passwordMatches) {
-      throw new Error("Credenciais inválidas");
+      throw new AppError("Credenciais inválidas", 401);
     }
 
     const token = jwt.sign(

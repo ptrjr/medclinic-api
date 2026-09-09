@@ -4,6 +4,7 @@ import { AppDataSource } from "./database/data-source";
 import { authRoutes } from "./routes/auth.routes";
 import { userRoutes } from "./routes/user.routes";
 import { adminRoutes } from "./routes/admin.routes";
+import { errorMiddleware } from "./middlewares/errorMiddlewares";
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/admin", adminRoutes);
+app.use(errorMiddleware);
 
 app.get("/", (request, response) => {
   return response.json({
