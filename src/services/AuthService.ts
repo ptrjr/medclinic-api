@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 
 import { UserRepository } from "../repositories/UserRepository";
 import { UserRole } from "../entities/user";
@@ -61,6 +61,10 @@ export class AuthService {
       throw new AppError("Credenciais inválidas", 401);
     }
 
+    const expiresIn = (
+      process.env.JWT_EXPIRES_IN || "1d"
+    ) as SignOptions["expiresIn"];
+
     const token = jwt.sign(
       {
         role: user.role,
@@ -68,7 +72,7 @@ export class AuthService {
       process.env.JWT_SECRET as string,
       {
         subject: user.id,
-        expiresIn: "1d",
+        expiresIn,
       }
     );
 
