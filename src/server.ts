@@ -1,10 +1,12 @@
 import express from "express";
 import "dotenv/config";
 import { AppDataSource } from "./database/data-source";
+import { authRoutes } from "./routes/auth.routes";
 
 const app = express();
 
 app.use(express.json());
+app.use("/auth", authRoutes);
 
 app.get("/", (request, response) => {
   return response.json({
