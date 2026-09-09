@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import { UserRepository } from "../repositories/UserRepository";
-import { UserRole } from "../entities/User";
+import { UserRole } from "../entities/user";
 
 interface RegisterUserDTO {
   name: string;
