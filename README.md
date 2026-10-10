@@ -278,7 +278,7 @@ Resposta **201**:
 }
 ```
 
-`GET /api/v1/patients?page=1&limit=20&search=maria` retorna **200** com `{ "items": [], "total": 0, "page": 1, "limit": 20 }`. `GET`, `PATCH` e `DELETE` usam `/api/v1/patients/:id`; a exclusão bem-sucedida responde **204** sem corpo. CPF inválido retorna **400** `DADOS_INVALIDOS`, CPF repetido retorna **409** `CPF_JA_CADASTRADO` e paciente inexistente retorna **404** `RECURSO_NAO_ENCONTRADO`.
+`GET /api/v1/patients?page=1&pageSize=20&search=maria` retorna **200** com `{ "items": [], "total": 0, "page": 1, "pageSize": 20 }`. `GET`, `PATCH` e `DELETE` usam `/api/v1/patients/:id`; a exclusão bem-sucedida responde **204** sem corpo. CPF inválido retorna **400** `DADOS_INVALIDOS`, CPF repetido retorna **409** `CPF_JA_CADASTRADO` e paciente inexistente retorna **404** `RECURSO_NAO_ENCONTRADO`.
 
 ### Erros
 

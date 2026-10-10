@@ -53,11 +53,11 @@ describe('PatientService', () => {
   it('lista com paginação e busca', async () => {
     const patients = repository();
     await expect(
-      new PatientService(patients).list({ page: 2, limit: 10, search: 'Maria' }),
+      new PatientService(patients).list({ page: 2, pageSize: 10, search: 'Maria' }),
     ).resolves.toMatchObject({
       total: 1,
       page: 2,
-      limit: 10,
+      pageSize: 10,
       items: [{ id: patient.id }],
     });
     expect(patients.list).toHaveBeenCalledWith(2, 10, 'Maria');
