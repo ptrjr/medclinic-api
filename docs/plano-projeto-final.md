@@ -18,7 +18,7 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 | Ordem | Entrega / issue                                                               | Branch sugerida          | Estado inicial           | Aceitação principal                                |
 | ----- | ----------------------------------------------------------------------------- | ------------------------ | ------------------------ | -------------------------------------------------- |
 | 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec` | Em revisão ao abrir o PR | Nove correções; contrato de auth; testes e CI      |
-| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/pacientes`         | Backlog                  | CRUD, CPF único, busca e paginação                 |
+| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`          | Em desenvolvimento       | CRUD, CPF único, busca e paginação                 |
 | 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/medicos`           | Backlog                  | Médico + usuário em uma transação; CRM único       |
 | 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/escala-agenda`     | Backlog                  | Turnos sem sobreposição; agenda por período        |
 | 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/agendamentos`      | Backlog                  | Seis validações, concorrência, posse e status      |
