@@ -6,7 +6,7 @@ Esta é a evolução do mini-projeto de autenticação da Semana 07. A proposta 
 
 ## Estado do projeto
 
-**Etapa 1 do projeto final: base segura de autenticação, usuários, migrations e CI.**
+**Etapa 2 do projeto final: base segura, cadastro de pacientes, migrations e CI.**
 
 Implementado nesta etapa:
 
@@ -21,8 +21,9 @@ Implementado nesta etapa:
 - ESLint, Prettier, configuração do VS Code e testes unitários.
 - Workflow de validação de PR com limite de cobertura de 80%.
 - Dockerfile multi-stage e Docker Compose para PostgreSQL local.
+- CRUD de pacientes com CPF validado/único, busca e paginação; acesso para `admin` e `secretary`.
 
-Pacientes, médicos, escalas, agendamentos, prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
+Médicos, escalas, agendamentos, prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
 
 Backlog: [issues do projeto](https://github.com/ptrjr/medclinic-api/issues). Plano detalhado: [docs/plano-projeto-final.md](docs/plano-projeto-final.md).
 Board público: ainda precisa ser criado e vinculado às issues; a lista de issues não substitui o board exigido na avaliação.
@@ -167,12 +168,17 @@ Os testes são unitários: não dependem de banco em execução, rede ou variáv
 
 ## Endpoints implementados
 
-| Método | Rota                 | Acesso      |
-| ------ | -------------------- | ----------- |
-| GET    | `/api/v1/health`     | Público     |
-| POST   | `/api/v1/auth/login` | Público     |
-| GET    | `/api/v1/users/me`   | Autenticado |
-| POST   | `/api/v1/users`      | Admin       |
+| Método | Rota                   | Acesso          |
+| ------ | ---------------------- | --------------- |
+| GET    | `/api/v1/health`       | Público         |
+| POST   | `/api/v1/auth/login`   | Público         |
+| GET    | `/api/v1/users/me`     | Autenticado     |
+| POST   | `/api/v1/users`        | Admin           |
+| POST   | `/api/v1/patients`     | Admin/secretary |
+| GET    | `/api/v1/patients`     | Admin/secretary |
+| GET    | `/api/v1/patients/:id` | Admin/secretary |
+| PATCH  | `/api/v1/patients/:id` | Admin/secretary |
+| DELETE | `/api/v1/patients/:id` | Admin/secretary |
 
 O cadastro público `/auth/register` foi removido. Não existe `/api/v1/auth/register`; a criação é interna por `POST /api/v1/users`, conforme RF13. As rotas antigas sem prefixo não são aliases.
 
@@ -242,6 +248,37 @@ Resposta **201**:
 ```
 
 E-mail duplicado: **409** `EMAIL_JA_CADASTRADO`. Perfil inexistente, e-mail inválido, senha fora dos limites ou corpo incompleto: **400** `DADOS_INVALIDOS`. Sem token: **401** `NAO_AUTENTICADO`. Sem admin: **403** `ACESSO_NEGADO`.
+
+### Pacientes
+
+`POST /api/v1/patients`, com token de `admin` ou `secretary`:
+
+```json
+{
+  "name": "Maria da Silva",
+  "cpf": "529.982.247-25",
+  "birthDate": "1990-03-20",
+  "phone": "(49) 99999-9999",
+  "email": "maria@example.com"
+}
+```
+
+Resposta **201**:
+
+```json
+{
+  "id": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+  "name": "Maria da Silva",
+  "cpf": "52998224725",
+  "birthDate": "1990-03-20",
+  "phone": "(49) 99999-9999",
+  "email": "maria@example.com",
+  "createdAt": "2026-10-10T12:00:00.000Z",
+  "updatedAt": "2026-10-10T12:00:00.000Z"
+}
+```
+
+`GET /api/v1/patients?page=1&limit=20&search=maria` retorna **200** com `{ "items": [], "total": 0, "page": 1, "limit": 20 }`. `GET`, `PATCH` e `DELETE` usam `/api/v1/patients/:id`; a exclusão bem-sucedida responde **204** sem corpo. CPF inválido retorna **400** `DADOS_INVALIDOS`, CPF repetido retorna **409** `CPF_JA_CADASTRADO` e paciente inexistente retorna **404** `RECURSO_NAO_ENCONTRADO`.
 
 ### Erros
 

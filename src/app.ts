@@ -1,14 +1,17 @@
 import express, { type Express, type RequestHandler } from 'express';
 import type { AuthController } from './controllers/auth.controller';
 import type { UserController } from './controllers/user.controller';
+import type { PatientController } from './controllers/patient.controller';
 import { AppError } from './errors/app-error';
 import { createErrorMiddleware, type ErrorLogger } from './middlewares/error.middleware';
 import { createAuthRoutes } from './routes/auth.routes';
 import { createUserRoutes } from './routes/user.routes';
+import { createPatientRoutes } from './routes/patient.routes';
 
 export interface AppDependencies {
   authController: AuthController;
   userController: UserController;
+  patientController: PatientController;
   authenticate: RequestHandler;
   logError?: ErrorLogger;
 }
@@ -22,6 +25,10 @@ export function createApp(dependencies: AppDependencies): Express {
   app.use(
     '/api/v1/users',
     createUserRoutes(dependencies.userController, dependencies.authenticate),
+  );
+  app.use(
+    '/api/v1/patients',
+    createPatientRoutes(dependencies.patientController, dependencies.authenticate),
   );
   app.use(() => {
     throw new AppError('RECURSO_NAO_ENCONTRADO', 'Rota não encontrada.');
