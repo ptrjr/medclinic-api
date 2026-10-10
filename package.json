@@ -1,12 +1,28 @@
 {
-  "name": "medclinic--api",
+  "name": "medclinic-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "API de gestão clínica — projeto final SCTEC",
+  "main": "dist/server.js",
+  "engines": {
+    "node": "^22.13.0 || ^24.0.0 || >=26.0.0"
+  },
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.check.json",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix --max-warnings=0",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d src/database/data-source.ts",
+    "migration:run:prod": "typeorm migration:run -d dist/database/data-source.js",
+    "seed:admin": "tsx src/database/seed-admin.ts",
+    "seed:admin:prod": "node dist/database/seed-admin.js"
   },
   "keywords": [],
   "author": "",
@@ -19,14 +35,23 @@
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^1.1.1"
+    "typeorm": "^1.1.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.5.0",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.2"
+    "@vitest/coverage-v8": "^5.0.3",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.10",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
   }
 }
