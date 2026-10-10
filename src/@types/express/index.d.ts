@@ -1,8 +1,9 @@
-declare namespace Express {
-  export interface Request {
-    user?: {
-      id: string;
-      role: string;
-    };
+import type { AuthPrincipal } from '../../domain/user';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthPrincipal;
+    }
   }
 }

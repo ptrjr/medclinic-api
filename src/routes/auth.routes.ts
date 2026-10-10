@@ -1,16 +1,8 @@
-import { Router } from "express";
-import { AuthController } from "../controllers/AuthController";
+import { Router } from 'express';
+import type { AuthController } from '../controllers/auth.controller';
 
-const authRoutes = Router();
-
-const authController = new AuthController();
-
-authRoutes.post("/register", (request, response, next) => {
-  return authController.register(request, response, next);
-});
-
-authRoutes.post("/login", (request, response, next) => {
-  return authController.login(request, response, next);
-});
-
-export { authRoutes };
+export function createAuthRoutes(controller: AuthController): Router {
+  const routes = Router();
+  routes.post('/login', (request, response) => controller.login(request, response));
+  return routes;
+}

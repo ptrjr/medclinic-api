@@ -1,16 +1,6 @@
-import "reflect-metadata";
-import { DataSource } from "typeorm";
-import "dotenv/config";
-import { User } from "../entities/user";
+import 'dotenv/config';
+import { parseDatabaseEnvironment } from '../config/environment';
+import { createDataSource } from './create-data-source';
 
-export const AppDataSource = new DataSource({
-  type: "postgres",
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  synchronize: true,
-  logging: false,
-  entities: [User],
-});
+// Export único para o CLI de migrations do TypeORM.
+export const AppDataSource = createDataSource(parseDatabaseEnvironment(process.env));
