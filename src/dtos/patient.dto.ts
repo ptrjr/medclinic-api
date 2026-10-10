@@ -49,7 +49,7 @@ export const updatePatientSchema = z
 export const patientIdSchema = z.uuid();
 export const listPatientsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().trim().min(1).max(150).optional(),
 });
 

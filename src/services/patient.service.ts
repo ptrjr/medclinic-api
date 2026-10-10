@@ -25,13 +25,13 @@ export class PatientService {
 
   public async list(
     query: ListPatientsQuery,
-  ): Promise<{ items: PatientResponse[]; total: number; page: number; limit: number }> {
-    const result = await this.patients.list(query.page, query.limit, query.search);
+  ): Promise<{ items: PatientResponse[]; total: number; page: number; pageSize: number }> {
+    const result = await this.patients.list(query.page, query.pageSize, query.search);
     return {
       items: result.items.map(toPatientResponse),
       total: result.total,
       page: query.page,
-      limit: query.limit,
+      pageSize: query.pageSize,
     };
   }
 
