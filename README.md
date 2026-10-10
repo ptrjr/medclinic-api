@@ -1,224 +1,267 @@
 # MedClinic API
 
-API desenvolvida como mini-projeto avaliativo do módulo de Back-end com Node.js.
+API REST de gestão clínica desenvolvida por Mauricio Petri Junior para o projeto final avaliativo do SCTEC / SENAI.
 
-Nesta etapa, o projeto tem foco exclusivamente na base de autenticação e autorização da aplicação MedClinic.
+Esta é a evolução do mini-projeto de autenticação da Semana 07. A proposta final está no [repositório do professor](https://github.com/marcomoura-senai/nestjs-clinica).
 
-## Tecnologias utilizadas
+## Estado do projeto
 
-- Node.js
-- TypeScript
-- Express
-- TypeORM
-- PostgreSQL
-- JWT
-- bcrypt
-- dotenv
+**Etapa 1 do projeto final: base segura de autenticação, usuários, migrations e CI.**
 
-## Funcionalidades implementadas
+Implementado nesta etapa:
 
-- Cadastro de usuários
-- Validação de e-mail duplicado
-- Hash de senha com bcrypt
-- Login com JWT
-- Middleware de autenticação
-- Controle de acesso por perfil (RBAC)
-- Perfil Administrador
-- Perfil Atendente
-- Endpoint do usuário autenticado
-- Endpoint exclusivo para administrador
-- Tratamento centralizado de erros
+- Login JWT e autorização por múltiplos perfis: `admin`, `secretary` e `doctor`.
+- Rotas sob `/api/v1`, resposta `accessToken` e campo `roles` como array.
+- Criação de usuários exclusiva para administradores autenticados.
+- DTOs Zod com validação de e-mail, senha e perfis.
+- Erros de domínio traduzidos para o envelope HTTP por um único middleware.
+- Services e controllers com injeção pelo construtor; composição em um único ponto.
+- Repositório com `findByEmail`, `findById` e `createUser`.
+- Migrations versionadas, `synchronize: false` e seed idempotente do primeiro admin.
+- ESLint, Prettier, configuração do VS Code e testes unitários.
+- Workflow de validação de PR com limite de cobertura de 80%.
+- Dockerfile multi-stage e Docker Compose para PostgreSQL local.
 
-## Perfis de acesso
+Pacientes, médicos, escalas, agendamentos, prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
 
-### Administrador
+Backlog: [issues do projeto](https://github.com/ptrjr/medclinic-api/issues). Plano detalhado: [docs/plano-projeto-final.md](docs/plano-projeto-final.md).
+Board público: ainda precisa ser criado e vinculado às issues; a lista de issues não substitui o board exigido na avaliação.
 
-Possui acesso às rotas autenticadas e às rotas administrativas da aplicação.
+## Tecnologias
 
-### Atendente
+Node.js 22 LTS, TypeScript estrito, Express 5, TypeORM, PostgreSQL 16, Zod, bcrypt, JSON Web Token, Vitest, ESLint e Prettier.
 
-Possui acesso às rotas autenticadas permitidas, mas não às rotas exclusivas de administrador.
+O enunciado aceita Express e NestJS. Mantivemos Express para evoluir o trabalho anterior e deixar explícitas a composição e a injeção de dependências. Os UUIDs da etapa anterior foram preservados; o contrato não impõe o tipo da chave interna.
 
-## Estrutura do projeto
+## Execução local
 
-```text
-src/
-├── @types/
-├── controllers/
-├── database/
-├── entities/
-├── errors/
-├── middlewares/
-├── repositories/
-├── routes/
-├── services/
-└── server.ts
-
-database/
-└── medclinic.sql
-```
-
-A aplicação utiliza uma arquitetura em camadas, separando responsabilidades entre rotas, controllers, services, repositories, entities e middlewares.
-
-## Configuração do ambiente
-
-Clone o repositório e instale as dependências:
+Pré-requisitos: Node.js 22.13 ou superior da linha 22 LTS (ou 24 LTS), npm e Docker com Compose.
 
 ```bash
-npm install
+git clone https://github.com/ptrjr/medclinic-api.git
+cd medclinic-api
+npm ci
+cp .env.example .env
 ```
 
-Crie um arquivo `.env` na raiz do projeto utilizando `.env.example` como referência.
+No PowerShell, use `Copy-Item .env.example .env` para copiar o arquivo. Se a política do PowerShell bloquear `npm.ps1`, execute os comandos com `npm.cmd`.
 
-Exemplo:
+Preencha `.env`. Para uma instalação **exclusivamente local**, o login usado nos exemplos é `admin@medclinic.com`, com senha `SenhaForte@123`: defina esses valores em `ADMIN_EMAIL` e `ADMIN_PASSWORD` se desejar reproduzir os exemplos. Não há senha padrão automática no código. Na publicação, escolha credenciais próprias e forneça as de avaliação ao professor pelo AVA.
 
-```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=sua_senha
-DB_DATABASE=medclinic
-
-PORT=3000
-
-JWT_SECRET=sua_chave_secreta
-JWT_EXPIRES_IN=1d
-```
-
-## Banco de dados
-
-O projeto utiliza PostgreSQL.
-
-Crie um banco chamado:
-
-```text
-medclinic
-```
-
-O script para criação da estrutura inicial está disponível em:
-
-```text
-database/medclinic.sql
-```
-
-## Executando o projeto
-
-Para executar em modo de desenvolvimento:
+Gere um segredo JWT:
 
 ```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Copie o resultado para `JWT_SECRET` e escolha `DB_PASSWORD`. Depois:
+
+```bash
+docker compose up -d db
+npm run migration:run
+npm run seed:admin
 npm run dev
 ```
 
-Por padrão, a API utiliza:
+A API escuta em `http://localhost:3000`, ou na porta definida por `PORT`.
 
-```text
-http://localhost:3000
+Para executar o código compilado:
+
+```bash
+npm run build
+npm start
 ```
 
-## Endpoints
+`npm start` e `npm run dev` exigem um banco já migrado. O container de produção executa migrations e seed antes do servidor.
 
-### Cadastro
+## Variáveis de ambiente
 
-```http
-POST /auth/register
+Todas as chaves estão em `.env.example`. O arquivo `.env` é ignorado pelo Git.
+
+| Variável         | Uso                                          | Obrigatoriedade / padrão                                   |
+| ---------------- | -------------------------------------------- | ---------------------------------------------------------- |
+| `DB_HOST`        | Endereço do PostgreSQL                       | Obrigatória                                                |
+| `DB_PORT`        | Porta do PostgreSQL                          | 5432                                                       |
+| `DB_USERNAME`    | Usuário do banco                             | Obrigatória                                                |
+| `DB_PASSWORD`    | Senha do banco e do Compose local            | Obrigatória                                                |
+| `DB_DATABASE`    | Nome do banco                                | Obrigatória                                                |
+| `DB_SSL`         | SSL com verificação do certificado           | `false` local; `true` na nuvem                             |
+| `PORT`           | Porta HTTP; servidor escuta em `0.0.0.0`     | 3000                                                       |
+| `JWT_SECRET`     | Assinatura do JWT, mínimo de 32 caracteres   | Obrigatória no servidor                                    |
+| `JWT_EXPIRES_IN` | Prazo: segundos numéricos ou sufixos s/m/h/d | 1d; maior que zero e até 30 dias                           |
+| `ADMIN_NAME`     | Nome do admin do seed                        | Administrador                                              |
+| `ADMIN_EMAIL`    | E-mail do primeiro admin                     | Obrigatória no seed                                        |
+| `ADMIN_PASSWORD` | Senha do primeiro admin                      | Obrigatória no seed; mínimo 8 caracteres e máximo 72 bytes |
+
+O boot recusa configurações inválidas antes de conectar ou abrir a porta e informa os nomes das variáveis, sem imprimir valores de segredos. O CLI de migrations exige apenas configuração de banco.
+
+## Banco, migrations e seed
+
+```bash
+npm run migration:show
+npm run migration:run
+npm run migration:revert
+npm run seed:admin
 ```
 
-Exemplo de requisição:
+Em produção, use `npm run migration:run:prod` e `npm run seed:admin:prod`, após o build.
+
+As duas migrations iniciais:
+
+1. Reconhecem a tabela `users` da etapa anterior ou criam a base em um banco vazio.
+2. Convertem `Administrador` em `admin` e `Atendente` em `secretary`, preservando UUID, nome e hash; o perfil passa a ser um array. Convertem `createdAt` para `timestamptz` e normalizam e-mails.
+
+A conversão do timestamp antigo considera os valores existentes como UTC. Antes de migrar uma base já usada, faça backup e confirme essa convenção. Se houver dois e-mails antigos que se tornam iguais após normalizar caixa/espaços, a migration falha e a transação preserva os dados; resolva a duplicidade antes de executar novamente.
+
+O banco mantém unicidade de e-mail e uma restrição `CHECK` para os perfis permitidos. A senha continua na coluna original `password`, mapeada internamente como `passwordHash`, sem exposição no DTO.
+
+`migration:revert` volta uma migration por vez. A reversão da segunda migration é bloqueada quando há usuários `doctor` ou com múltiplos perfis, para não descartar permissões silenciosamente. A reversão da primeira remove a tabela de usuários: use apenas em uma base de desenvolvimento descartável.
+
+O seed não sobrescreve senhas nem promove usuários existentes. Se o e-mail já pertence a um admin, preserva as credenciais; se pertence a um usuário sem perfil admin, falha. Trocar `ADMIN_PASSWORD` e rodar o seed novamente **não altera a senha** de uma conta existente. A troca de senha será um fluxo administrativo separado.
+
+O SQL avulso foi removido: as migrations são a fonte versionada do schema.
+
+## Arquitetura e nomes
+
+O controller valida o DTO e chama o service. O service aplica a regra de negócio sobre interfaces de repositório, senha e token. O adaptador de repositório usa TypeORM. `composition-root.ts` monta os objetos uma vez e injeta as dependências pelos construtores.
+
+Services lançam `AppError` com códigos de domínio e não conhecem status HTTP. O middleware de erro é o único ponto que transforma essas falhas em respostas. As Promises dos controllers são retornadas pelas rotas; o Express 5 encaminha rejeições para esse middleware.
+
+| Pasta / arquivo                            | Responsabilidade                                  |
+| ------------------------------------------ | ------------------------------------------------- |
+| `src/server.ts`                            | Validação do boot, conexão, escuta e encerramento |
+| `src/app.ts`                               | Registro das rotas e middlewares                  |
+| `src/composition-root.ts`                  | Montagem e injeção das dependências               |
+| `src/config/`                              | Schemas de configuração                           |
+| `src/controllers/`, `src/routes/`          | Fronteira HTTP                                    |
+| `src/dtos/`                                | Validação e contratos de entrada/saída            |
+| `src/services/`                            | Regras de negócio                                 |
+| `src/domain/`, `src/errors/`, `src/ports/` | Tipos, erros de domínio e interfaces              |
+| `src/repositories/`                        | Adaptadores TypeORM                               |
+| `src/entities/`, `src/database/`           | Modelagem, migrations e seed                      |
+| `src/infrastructure/`                      | Adaptadores bcrypt e JWT                          |
+| `src/middlewares/`                         | Autenticação, autorização e tradução de erros     |
+| `tests/`                                   | Testes unitários e dublês                         |
+
+Arquivos em kebab-case com sufixos por responsabilidade (`.service.ts`, `.controller.ts`, `.repository.ts`, `.entity.ts`). Classes em PascalCase, variáveis e métodos em camelCase, perfis em minúsculas. As propriedades e os métodos declaram acesso explícito; dependências são `private readonly`.
+
+## Qualidade, testes e cobertura
+
+```bash
+npm run lint
+npx eslint --fix
+npm run format:check
+npm run typecheck
+npm run build
+npm test
+npm run test:cov
+```
+
+Para formatação e correções: `npm run format` e `npm run lint:fix`. Instale as extensões recomendadas em `.vscode/extensions.json`; o VS Code está configurado para Prettier e correções ESLint ao salvar.
+
+A cobertura considera **apenas `src/**/*.service.ts` e `src/**/*.rules.ts`**, onde ficam as regras de negócio. Controllers, entidades, migrations, configuração e adaptadores ficam fora da conta. Novos services/rules entram automaticamente. O limiar mínimo é 80% em statements, branches, functions e lines; abaixo disso o comando falha.
+
+Nesta primeira etapa, são 82 testes, com 100% nas quatro métricas dos três services existentes. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt e envelope central de erro. Os casos exigidos de agendamento, escala e prontuário serão adicionados com os módulos correspondentes.
+
+Os testes são unitários: não dependem de banco em execução, rede ou variáveis de ambiente. As portas recebem dublês nos testes dos services. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
+
+## Endpoints implementados
+
+| Método | Rota                 | Acesso      |
+| ------ | -------------------- | ----------- |
+| GET    | `/api/v1/health`     | Público     |
+| POST   | `/api/v1/auth/login` | Público     |
+| GET    | `/api/v1/users/me`   | Autenticado |
+| POST   | `/api/v1/users`      | Admin       |
+
+O cadastro público `/auth/register` foi removido. Não existe `/api/v1/auth/register`; a criação é interna por `POST /api/v1/users`, conforme RF13. As rotas antigas sem prefixo não são aliases.
+
+### Saúde
+
+`GET /api/v1/health` → **200**:
 
 ```json
-{
-  "name": "Usuario Teste",
-  "email": "teste@email.com",
-  "password": "123456",
-  "role": "Atendente"
-}
+{ "status": "ok" }
 ```
-
-A senha é armazenada utilizando hash com bcrypt e nunca é retornada pela API.
 
 ### Login
 
-```http
-POST /auth/login
-```
-
-Exemplo de requisição:
+`POST /api/v1/auth/login`:
 
 ```json
-{
-  "email": "teste@email.com",
-  "password": "123456"
-}
+{ "email": "admin@medclinic.com", "password": "SenhaForte@123" }
 ```
 
-Em caso de sucesso, a API retorna um token JWT.
+Resposta **200**:
 
-O token contém o identificador do usuário e seu perfil de acesso.
+```json
+{ "accessToken": "<JWT>" }
+```
+
+E-mail e senha incorretos retornam a mesma resposta **401**:
+
+```json
+{ "statusCode": 401, "error": "CREDENCIAIS_INVALIDAS", "message": "Credenciais inválidas." }
+```
 
 ### Usuário autenticado
 
-```http
-GET /users/me
+`GET /api/v1/users/me`, com `Authorization: Bearer <accessToken>` → **200**:
+
+```json
+{
+  "id": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+  "name": "Administrador",
+  "email": "admin@medclinic.com",
+  "roles": ["admin"]
+}
 ```
 
-É necessário enviar o JWT no cabeçalho:
+### Criar usuário
 
-```text
-Authorization: Bearer SEU_TOKEN
+`POST /api/v1/users`, com token de admin:
+
+```json
+{
+  "name": "Joana Secretária",
+  "email": "joana@medclinic.com",
+  "password": "SenhaForte@123",
+  "roles": ["secretary"]
+}
 ```
 
-Retorna os dados do usuário autenticado sem expor sua senha.
+Resposta **201**:
 
-### Área administrativa
-
-```http
-GET /admin/ping
+```json
+{
+  "id": "7c40a508-6dfe-424b-80ef-2e28cc2ad900",
+  "name": "Joana Secretária",
+  "email": "joana@medclinic.com",
+  "roles": ["secretary"]
+}
 ```
 
-Necessita autenticação e perfil:
+E-mail duplicado: **409** `EMAIL_JA_CADASTRADO`. Perfil inexistente, e-mail inválido, senha fora dos limites ou corpo incompleto: **400** `DADOS_INVALIDOS`. Sem token: **401** `NAO_AUTENTICADO`. Sem admin: **403** `ACESSO_NEGADO`.
 
-```text
-Administrador
+### Erros
+
+```json
+{ "statusCode": 400, "error": "DADOS_INVALIDOS", "message": "Dados de entrada inválidos." }
 ```
 
-Um usuário autenticado com perfil `Atendente` recebe:
+Os erros conhecidos seguem o catálogo da seção 4.9.1 da proposta. Erros inesperados são registrados no servidor e retornam **500** com `ERRO_INTERNO`, sem stack ou detalhes internos. A proposta exige envelope até 500, mas não define código para esse caso; esta escolha está registrada no [plano](docs/plano-projeto-final.md).
 
-```text
-403 Forbidden
-```
+## CI e publicação
 
-## Respostas de erro
+`.github/workflows/pr-workflow.yml` roda em PRs para `main` com Node 22: instalação por `npm ci`, lint, formatação, tipagem, build e cobertura. O job tem nome estável `validate`.
 
-A API utiliza códigos HTTP apropriados para diferentes situações:
+Após o primeiro check verde, ative em **Settings → Branches → main**:
 
-- `400 Bad Request` - dados obrigatórios ausentes
-- `401 Unauthorized` - credenciais ou token inválidos
-- `403 Forbidden` - usuário sem permissão
-- `409 Conflict` - e-mail já cadastrado
-- `500 Internal Server Error` - erro interno inesperado
+- Require a pull request before merging.
+- Require status checks to pass before merging, selecionando `validate`.
 
-## Segurança
+O workflow não ativa proteção de branch sozinho. Sua ativação e o board público permanecem pendentes.
 
-- Senhas não são armazenadas em texto puro
-- bcrypt é utilizado para gerar o hash das senhas
-- JWT é utilizado para autenticação
-- Tokens possuem tempo de expiração
-- O arquivo `.env` não é versionado
-- Credenciais inválidas não revelam se o erro ocorreu no e-mail ou na senha
+A publicação automática será implementada em um PR próprio: imagem no registro, banco gerenciado com SSL, secrets no painel da plataforma e `deploy.yml` disparado por push na `main`. Nenhuma URL pública ou execução de deploy é declarada como concluída nesta etapa.
 
-## Escopo desta entrega
-
-Esta etapa contempla somente a estrutura de autenticação e autorização da MedClinic API.
-
-Não fazem parte desta entrega:
-
-- Especialidades
-- Médicos
-- Pacientes
-- Consultas
-
-Esses recursos pertencem às próximas etapas do projeto.
-
-## Autor
-
-Mauricio Petri Junior
+Entrega prevista no enunciado: **02/11/2026 às 22h**. Consulte o [plano de entregas](docs/plano-projeto-final.md) antes de submeter ao AVA.
