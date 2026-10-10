@@ -1,0 +1,25 @@
+import type { DataSource } from 'typeorm';
+import { createApp } from './app';
+import type { AppEnvironment } from './config/environment';
+import { AuthController } from './controllers/auth.controller';
+import { UserController } from './controllers/user.controller';
+import { UserEntity } from './entities/user.entity';
+import { BcryptPasswordHasher } from './infrastructure/bcrypt-password-hasher';
+import { JwtTokenProvider } from './infrastructure/jwt-token-provider';
+import { createAuthMiddleware } from './middlewares/auth.middleware';
+import { TypeOrmUserRepository } from './repositories/typeorm-user.repository';
+import { AuthService } from './services/auth.service';
+import { UserService } from './services/user.service';
+
+export function composeApplication(dataSource: DataSource, config: AppEnvironment) {
+  const users = new TypeOrmUserRepository(dataSource.getRepository(UserEntity));
+  const passwords = new BcryptPasswordHasher();
+  const tokens = new JwtTokenProvider(config.JWT_SECRET, config.JWT_EXPIRES_IN);
+  const authService = new AuthService(users, passwords, tokens);
+  const userService = new UserService(users, passwords);
+  return createApp({
+    authController: new AuthController(authService),
+    userController: new UserController(userService),
+    authenticate: createAuthMiddleware(tokens),
+  });
+}

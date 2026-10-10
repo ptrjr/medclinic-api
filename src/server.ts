@@ -1,35 +1,40 @@
-import express from "express";
-import "dotenv/config";
-import { AppDataSource } from "./database/data-source";
-import { authRoutes } from "./routes/auth.routes";
-import { userRoutes } from "./routes/user.routes";
-import { adminRoutes } from "./routes/admin.routes";
-import { errorMiddleware } from "./middlewares/errorMiddlewares";
+import 'dotenv/config';
+import { parseAppEnvironment } from './config/environment';
+import { createDataSource } from './database/create-data-source';
+import { composeApplication } from './composition-root';
 
-const app = express();
-
-app.use(express.json());
-app.use("/auth", authRoutes);
-app.use("/users", userRoutes);
-app.use("/admin", adminRoutes);
-app.use(errorMiddleware);
-
-app.get("/", (request, response) => {
-  return response.json({
-    message: "MedClinic API is running",
+async function main(): Promise<void> {
+  // Falha antes da conexão ou da abertura da porta se a configuração estiver incompleta.
+  const config = parseAppEnvironment(process.env);
+  const dataSource = createDataSource(config);
+  await dataSource.initialize();
+  const app = composeApplication(dataSource, config);
+  const server = app.listen(config.PORT, '0.0.0.0', () => {
+    console.log('MedClinic API disponível na porta ' + config.PORT + '.');
   });
-});
-
-const PORT = Number(process.env.PORT) || 3000;
-
-AppDataSource.initialize()
-  .then(() => {
-    console.log("Database connected successfully");
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+  server.on('error', (error) => {
+    console.error('Falha ao iniciar o servidor:', error.message);
+    void dataSource.destroy().finally(() => {
+      process.exitCode = 1;
     });
-  })
-  .catch((error) => {
-    console.error("Error connecting to database:", error);
   });
+
+  const shutdown = (): void => {
+    server.close(() => {
+      void dataSource.destroy().catch((error: unknown) => {
+        console.error(
+          'Falha ao encerrar a conexão:',
+          error instanceof Error ? error.message : 'Erro inesperado',
+        );
+        process.exitCode = 1;
+      });
+    });
+  };
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
+}
+
+void main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : 'Falha inesperada na inicialização.');
+  process.exitCode = 1;
+});
