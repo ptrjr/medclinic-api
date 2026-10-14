@@ -15,15 +15,15 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 
 ## Entregas
 
-| Ordem | Entrega / issue                                                               | Branch sugerida          | Estado inicial           | Aceitação principal                                |
-| ----- | ----------------------------------------------------------------------------- | ------------------------ | ------------------------ | -------------------------------------------------- |
-| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec` | Em revisão ao abrir o PR | Nove correções; contrato de auth; testes e CI      |
-| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`          | Em desenvolvimento       | CRUD, CPF único, busca e paginação                 |
-| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/medicos`           | Backlog                  | Médico + usuário em uma transação; CRM único       |
-| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/escala-agenda`     | Backlog                  | Turnos sem sobreposição; agenda por período        |
-| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/agendamentos`      | Backlog                  | Seis validações, concorrência, posse e status      |
-| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/prontuarios`       | Backlog                  | Escrita e leitura conforme vínculo médico-paciente |
-| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`          | Backlog                  | Deploy automático, SSL, URL pública e entrega      |
+| Ordem | Entrega / issue                                                               | Branch sugerida          | Estado inicial              | Aceitação principal                                |
+| ----- | ----------------------------------------------------------------------------- | ------------------------ | --------------------------- | -------------------------------------------------- |
+| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec` | Em revisão ao abrir o PR    | Nove correções; contrato de auth; testes e CI      |
+| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`          | Em desenvolvimento          | CRUD, CPF único, busca e paginação                 |
+| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`           | Implementado; aguardando PR | Médico + usuário em uma transação; CRM único       |
+| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/escala-agenda`     | Backlog                     | Turnos sem sobreposição; agenda por período        |
+| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/agendamentos`      | Backlog                     | Seis validações, concorrência, posse e status      |
+| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/prontuarios`       | Backlog                     | Escrita e leitura conforme vínculo médico-paciente |
+| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`          | Backlog                     | Deploy automático, SSL, URL pública e entrega      |
 
 As issues já têm descrições e critérios de aceitação. Criar um **GitHub Project público** e adicionar essas issues, com Backlog, A fazer, Em andamento, Em revisão e Concluído. Vincular cada PR ao card e mover o status durante o desenvolvimento. As ferramentas conectadas desta execução não oferecem criação de GitHub Projects ou configuração de proteção de branch; essas duas configurações ainda precisam ser feitas no GitHub.
 
@@ -66,6 +66,8 @@ A verificação real de concorrência deve usar PostgreSQL: mocks unitários nã
 4. **Admin inicial:** o feedback anterior sugeria admin fixo na migration; RP07 da etapa final permite script de seed e exige credenciais por ambiente. O seed segue RP07, sem senha de produção versionada.
 
 ## Antes da entrega no AVA
+
+Revisão literal de 13/10/2026: corrigir Pacientes em PR próprio. GET de lista e detalhe devem admitir qualquer perfil autenticado; DELETE exige somente admin. Listagem precisa aceitar `name` e devolver `{ data, meta: { total, page, pageSize, totalPages } }`. A correção anterior alterou apenas `pageSize` e não concluiu o contrato de listagem.
 
 - [ ] Todos os endpoints da seção 4.9 implementados e conferidos literalmente.
 - [ ] Casos mínimos e cobertura de pelo menos 80% nas quatro métricas.

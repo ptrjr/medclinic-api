@@ -6,7 +6,7 @@ Esta é a evolução do mini-projeto de autenticação da Semana 07. A proposta 
 
 ## Estado do projeto
 
-**Etapa 2 do projeto final: base segura, cadastro de pacientes, migrations e CI.**
+**Etapa 3 do projeto final: base segura, pacientes, médicos, migrations e CI.**
 
 Implementado nesta etapa:
 
@@ -22,8 +22,11 @@ Implementado nesta etapa:
 - Workflow de validação de PR com limite de cobertura de 80%.
 - Dockerfile multi-stage e Docker Compose para PostgreSQL local.
 - CRUD de pacientes com CPF validado/único, busca e paginação; acesso para `admin` e `secretary`.
+- Cadastro de médico com usuário `doctor` na mesma transação, CRM único, consultas autenticadas e paginação no envelope `data/meta`.
 
-Médicos, escalas, agendamentos, prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
+Escalas, agendamentos, prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
+
+A revisão literal da proposta identificou pendências no módulo anterior de Pacientes: permissões de leitura/exclusão, filtro `name` e envelope de listagem. Esses ajustes estão registrados no plano e serão tratados em uma correção própria.
 
 Backlog: [issues do projeto](https://github.com/ptrjr/medclinic-api/issues). Plano detalhado: [docs/plano-projeto-final.md](docs/plano-projeto-final.md).
 Board público: ainda precisa ser criado e vinculado às issues; a lista de issues não substitui o board exigido na avaliação.
@@ -122,6 +125,8 @@ O seed não sobrescreve senhas nem promove usuários existentes. Se o e-mail já
 
 O SQL avulso foi removido: as migrations são a fonte versionada do schema.
 
+A terceira migration cria `patients`. A quarta cria `doctors`, com CRM único, vínculo obrigatório com `users` e no máximo um médico por usuário. `DoctorRepository.createWithUser` recebe um hash e grava usuário e médico com os repositórios do mesmo `EntityManager` transacional. Uma falha em qualquer gravação reverte as duas. A reversão da quarta migration exige que `doctors` esteja vazia, para evitar usuários médicos sem registro profissional.
+
 ## Arquitetura e nomes
 
 O controller valida o DTO e chama o service. O service aplica a regra de negócio sobre interfaces de repositório, senha e token. O adaptador de repositório usa TypeORM. `composition-root.ts` monta os objetos uma vez e injeta as dependências pelos construtores.
@@ -166,6 +171,8 @@ Nesta primeira etapa, são 82 testes, com 100% nas quatro métricas dos três se
 
 Os testes são unitários: não dependem de banco em execução, rede ou variáveis de ambiente. As portas recebem dublês nos testes dos services. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
 
+O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por servidor Express temporário em `127.0.0.1`, sem banco externo. Verificam acesso por perfil, corpo inválido, duplicidade, consulta, ausência de senha e envelope `data/meta`, incluindo query `pageSize`. A suíte completa tem 129 testes; o service de Médicos alcança 100% nas quatro métricas. Evidências e limites da verificação de rollback: [docs/verificacao-medicos.md](docs/verificacao-medicos.md).
+
 ## Endpoints implementados
 
 | Método | Rota                   | Acesso          |
@@ -179,6 +186,9 @@ Os testes são unitários: não dependem de banco em execução, rede ou variáv
 | GET    | `/api/v1/patients/:id` | Admin/secretary |
 | PATCH  | `/api/v1/patients/:id` | Admin/secretary |
 | DELETE | `/api/v1/patients/:id` | Admin/secretary |
+| POST   | `/api/v1/doctors`      | Admin           |
+| GET    | `/api/v1/doctors`      | Autenticado     |
+| GET    | `/api/v1/doctors/:id`  | Autenticado     |
 
 O cadastro público `/auth/register` foi removido. Não existe `/api/v1/auth/register`; a criação é interna por `POST /api/v1/users`, conforme RF13. As rotas antigas sem prefixo não são aliases.
 
@@ -279,6 +289,62 @@ Resposta **201**:
 ```
 
 `GET /api/v1/patients?page=1&pageSize=20&search=maria` retorna **200** com `{ "items": [], "total": 0, "page": 1, "pageSize": 20 }`. `GET`, `PATCH` e `DELETE` usam `/api/v1/patients/:id`; a exclusão bem-sucedida responde **204** sem corpo. CPF inválido retorna **400** `DADOS_INVALIDOS`, CPF repetido retorna **409** `CPF_JA_CADASTRADO` e paciente inexistente retorna **404** `RECURSO_NAO_ENCONTRADO`.
+
+### Médicos
+
+`POST /api/v1/doctors`, com token de admin:
+
+```json
+{
+  "name": "Dra. Helena Souza",
+  "email": "helena@medclinic.com",
+  "password": "SenhaForte@123",
+  "crm": "CRM-SC-54321"
+}
+```
+
+Resposta **201**:
+
+```json
+{
+  "id": "338e7dbe-0f78-4d60-9de4-ab92a20de060",
+  "crm": "CRM-SC-54321",
+  "user": {
+    "id": "bd89f57e-f7e0-42b3-8db7-df2f316a80f6",
+    "name": "Dra. Helena Souza",
+    "email": "helena@medclinic.com",
+    "roles": ["doctor"]
+  }
+}
+```
+
+O médico pode autenticar imediatamente com o e-mail e a senha fornecidos. O cliente não escolhe o perfil; este cadastro sempre cria `doctor`. Senha e hash não aparecem nas respostas.
+
+`GET /api/v1/doctors/:id`, com token de qualquer perfil, retorna **200** com o mesmo formato, **400** `DADOS_INVALIDOS` para UUID malformado ou **404** `RECURSO_NAO_ENCONTRADO` para médico inexistente.
+
+`GET /api/v1/doctors?page=1&pageSize=20&name=helena`, autenticado, retorna **200**:
+
+```json
+{
+  "data": [
+    {
+      "id": "338e7dbe-0f78-4d60-9de4-ab92a20de060",
+      "crm": "CRM-SC-54321",
+      "user": {
+        "id": "bd89f57e-f7e0-42b3-8db7-df2f316a80f6",
+        "name": "Dra. Helena Souza",
+        "email": "helena@medclinic.com",
+        "roles": ["doctor"]
+      }
+    }
+  ],
+  "meta": { "total": 1, "page": 1, "pageSize": 20, "totalPages": 1 }
+}
+```
+
+O filtro `name` busca parte do nome sem distinguir maiúsculas e minúsculas, com consulta parametrizada. `page` começa em 1; `pageSize` tem padrão 20 e máximo 100. Uma página vazia retorna `data: []`; `meta.total` conta todos os médicos do filtro. Sem resultados, `totalPages` é 0.
+
+CRM repetido: **409** `CRM_JA_CADASTRADO`. E-mail repetido: **409** `EMAIL_JA_CADASTRADO`. Corpo ou query inválidos: **400** `DADOS_INVALIDOS`. Sem token: **401** `NAO_AUTENTICADO`. Cadastro por `doctor` ou `secretary`: **403** `ACESSO_NEGADO`. CRM duplicado e falhas de gravação não deixam usuário de acesso parcial.
 
 ### Erros
 
