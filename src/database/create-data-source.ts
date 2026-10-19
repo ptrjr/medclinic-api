@@ -4,6 +4,10 @@ import type { DatabaseEnvironment } from '../config/environment';
 import { UserEntity } from '../entities/user.entity';
 import { PatientEntity } from '../entities/patient.entity';
 import { DoctorEntity } from '../entities/doctor.entity';
+import { WorkScheduleEntity } from '../entities/work-schedule.entity';
+import { AppointmentEntity } from '../entities/appointment.entity';
+import { WorkSchedules1791580005000 } from './migrations/1791580005000-work-schedules';
+import { CalendarAppointments1791580006000 } from './migrations/1791580006000-calendar-appointments';
 import { Doctors1791580003000 } from './migrations/1791580003000-doctors';
 import { PatientContract1791580004000 } from './migrations/1791580004000-patient-contract';
 import { Patients1791580002000 } from './migrations/1791580002000-patients';
@@ -21,13 +25,15 @@ export function createDataSource(config: DatabaseEnvironment): DataSource {
     ssl: config.DB_SSL ? { rejectUnauthorized: true } : false,
     synchronize: false,
     logging: false,
-    entities: [UserEntity, PatientEntity, DoctorEntity],
+    entities: [UserEntity, PatientEntity, DoctorEntity, WorkScheduleEntity, AppointmentEntity],
     migrations: [
       InitialUsers1791580000000,
       UserRoles1791580001000,
       Patients1791580002000,
       Doctors1791580003000,
       PatientContract1791580004000,
+      WorkSchedules1791580005000,
+      CalendarAppointments1791580006000,
     ],
     migrationsTransactionMode: 'all',
   });
