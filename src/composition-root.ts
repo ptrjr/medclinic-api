@@ -5,6 +5,12 @@ import { AuthController } from './controllers/auth.controller';
 import { UserController } from './controllers/user.controller';
 import { PatientController } from './controllers/patient.controller';
 import { DoctorController } from './controllers/doctor.controller';
+import { DoctorPlanningController } from './controllers/doctor-planning.controller';
+import { WorkScheduleService } from './services/work-schedule.service';
+import { DoctorCalendarService } from './services/doctor-calendar.service';
+import { TypeOrmWorkScheduleRepository } from './repositories/typeorm-work-schedule.repository';
+import { TypeOrmCalendarAppointmentsRepository } from './repositories/typeorm-calendar-appointments.repository';
+import { AppointmentEntity } from './entities/appointment.entity';
 import { DoctorService } from './services/doctor.service';
 import { TypeOrmDoctorRepository } from './repositories/typeorm-doctor.repository';
 import { PatientEntity } from './entities/patient.entity';
@@ -23,6 +29,10 @@ export function composeApplication(dataSource: DataSource, config: AppEnvironmen
   const patients = new TypeOrmPatientRepository(dataSource.getRepository(PatientEntity));
   const passwords = new BcryptPasswordHasher();
   const doctors = new TypeOrmDoctorRepository(dataSource);
+  const schedules = new TypeOrmWorkScheduleRepository(dataSource);
+  const appointments = new TypeOrmCalendarAppointmentsRepository(
+    dataSource.getRepository(AppointmentEntity),
+  );
   const tokens = new JwtTokenProvider(config.JWT_SECRET, config.JWT_EXPIRES_IN);
   const authService = new AuthService(users, passwords, tokens);
   const userService = new UserService(users, passwords);
@@ -31,6 +41,10 @@ export function composeApplication(dataSource: DataSource, config: AppEnvironmen
     userController: new UserController(userService),
     patientController: new PatientController(new PatientService(patients)),
     doctorController: new DoctorController(new DoctorService(doctors, users, passwords)),
+    doctorPlanningController: new DoctorPlanningController(
+      new WorkScheduleService(doctors, schedules),
+      new DoctorCalendarService(doctors, schedules, appointments),
+    ),
     authenticate: createAuthMiddleware(tokens),
   });
 }
