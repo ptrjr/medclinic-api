@@ -21,12 +21,12 @@ Implementado nesta etapa:
 - ESLint, Prettier, configuração do VS Code e testes unitários.
 - Workflow de validação de PR com limite de cobertura de 80%.
 - Dockerfile multi-stage e Docker Compose para PostgreSQL local.
-- CRUD de pacientes com CPF validado/único, busca e paginação; acesso para `admin` e `secretary`.
+- Pacientes com cadastro mínimo `name`/`cpf`, CPF de 11 dígitos único, filtro `name`, listagem `data/meta` e exclusão lógica. Leitura autenticada; cadastro/alteração para `admin` e `secretary`; exclusão somente por `admin`.
 - Cadastro de médico com usuário `doctor` na mesma transação, CRM único, consultas autenticadas e paginação no envelope `data/meta`.
 
 Escalas, agendamentos, prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
 
-A revisão literal da proposta identificou pendências no módulo anterior de Pacientes: permissões de leitura/exclusão, filtro `name` e envelope de listagem. Esses ajustes estão registrados no plano e serão tratados em uma correção própria.
+O módulo de Pacientes foi ajustado ao contrato literal da seção 4.9.3. O corpo de cadastro contém apenas `name` e `cpf`; o PATCH altera apenas `name`. Campos adicionais da versão anterior permanecem preservados no banco, mas não integram a API pública.
 
 Backlog: [issues do projeto](https://github.com/ptrjr/medclinic-api/issues). Plano detalhado: [docs/plano-projeto-final.md](docs/plano-projeto-final.md).
 Board público: ainda precisa ser criado e vinculado às issues; a lista de issues não substitui o board exigido na avaliação.
@@ -169,9 +169,9 @@ A cobertura considera **apenas `src/**/*.service.ts` e `src/**/*.rules.ts`**, on
 
 Nesta primeira etapa, são 82 testes, com 100% nas quatro métricas dos três services existentes. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt e envelope central de erro. Os casos exigidos de agendamento, escala e prontuário serão adicionados com os módulos correspondentes.
 
-Os testes são unitários: não dependem de banco em execução, rede ou variáveis de ambiente. As portas recebem dublês nos testes dos services. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
+Os testes de services são unitários e usam dublês nas portas. Testes HTTP usam servidores Express temporários em `127.0.0.1`, JWT real e os mesmos dublês, sem banco externo. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
 
-O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por servidor Express temporário em `127.0.0.1`, sem banco externo. Verificam acesso por perfil, corpo inválido, duplicidade, consulta, ausência de senha e envelope `data/meta`, incluindo query `pageSize`. A suíte completa tem 129 testes; o service de Médicos alcança 100% nas quatro métricas. Evidências e limites da verificação de rollback: [docs/verificacao-medicos.md](docs/verificacao-medicos.md).
+O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por servidor Express temporário em `127.0.0.1`, sem banco externo. Verificam acesso por perfil, corpo inválido, duplicidade, consulta, ausência de senha e envelope `data/meta`, incluindo query `pageSize`. Na etapa de Médicos a suíte tinha 129 testes; o service de Médicos alcança 100% nas quatro métricas. Evidências e limites da verificação de rollback: [docs/verificacao-medicos.md](docs/verificacao-medicos.md).
 
 ## Endpoints implementados
 
@@ -182,10 +182,10 @@ O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por
 | GET    | `/api/v1/users/me`     | Autenticado     |
 | POST   | `/api/v1/users`        | Admin           |
 | POST   | `/api/v1/patients`     | Admin/secretary |
-| GET    | `/api/v1/patients`     | Admin/secretary |
-| GET    | `/api/v1/patients/:id` | Admin/secretary |
+| GET    | `/api/v1/patients`     | Autenticado     |
+| GET    | `/api/v1/patients/:id` | Autenticado     |
 | PATCH  | `/api/v1/patients/:id` | Admin/secretary |
-| DELETE | `/api/v1/patients/:id` | Admin/secretary |
+| DELETE | `/api/v1/patients/:id` | Admin           |
 | POST   | `/api/v1/doctors`      | Admin           |
 | GET    | `/api/v1/doctors`      | Autenticado     |
 | GET    | `/api/v1/doctors/:id`  | Autenticado     |
@@ -264,13 +264,7 @@ E-mail duplicado: **409** `EMAIL_JA_CADASTRADO`. Perfil inexistente, e-mail inv�
 `POST /api/v1/patients`, com token de `admin` ou `secretary`:
 
 ```json
-{
-  "name": "Maria da Silva",
-  "cpf": "529.982.247-25",
-  "birthDate": "1990-03-20",
-  "phone": "(49) 99999-9999",
-  "email": "maria@example.com"
-}
+{ "name": "Carlos Pereira", "cpf": "12345678901" }
 ```
 
 Resposta **201**:
@@ -278,17 +272,47 @@ Resposta **201**:
 ```json
 {
   "id": "20ba7288-1e53-4d79-8a38-4446c4840c28",
-  "name": "Maria da Silva",
-  "cpf": "52998224725",
-  "birthDate": "1990-03-20",
-  "phone": "(49) 99999-9999",
-  "email": "maria@example.com",
-  "createdAt": "2026-10-10T12:00:00.000Z",
-  "updatedAt": "2026-10-10T12:00:00.000Z"
+  "name": "Carlos Pereira",
+  "cpf": "12345678901",
+  "createdAt": "2026-10-20T14:03:11.000Z"
 }
 ```
 
-`GET /api/v1/patients?page=1&pageSize=20&search=maria` retorna **200** com `{ "items": [], "total": 0, "page": 1, "pageSize": 20 }`. `GET`, `PATCH` e `DELETE` usam `/api/v1/patients/:id`; a exclusão bem-sucedida responde **204** sem corpo. CPF inválido retorna **400** `DADOS_INVALIDOS`, CPF repetido retorna **409** `CPF_JA_CADASTRADO` e paciente inexistente retorna **404** `RECURSO_NAO_ENCONTRADO`.
+O CPF deve ser uma string com exatamente 11 dígitos sem pontuação, conforme o contrato. Não são exigidos nascimento, telefone ou e-mail, nem verificação aritmética dos dígitos do CPF. O exemplo fictício do enunciado é aceito; pontuação, letras ou tamanho incorreto retornam **400** `DADOS_INVALIDOS`. CPF duplicado retorna **409** `CPF_JA_CADASTRADO`.
+
+`GET /api/v1/patients?page=1&pageSize=20&name=carlos`, com token de qualquer perfil, responde **200**:
+
+```json
+{
+  "data": [
+    {
+      "id": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+      "name": "Carlos Pereira",
+      "cpf": "12345678901",
+      "createdAt": "2026-10-20T14:03:11.000Z"
+    }
+  ],
+  "meta": { "total": 1, "page": 1, "pageSize": 20, "totalPages": 1 }
+}
+```
+
+O filtro `name` faz busca parcial sem distinguir maiúsculas/minúsculas; os valores são parametrizados, e `%`/`_` não viram curingas. `page` tem padrão 1; `pageSize` tem padrão 20 e máximo 100. Query inválida retorna **400** `DADOS_INVALIDOS`. Sem resultados, retorna `data: []`, `total: 0` e `totalPages: 0`.
+
+`GET /api/v1/patients/:id`, autenticado, retorna **200** com os quatro campos do cadastro ou **404** `RECURSO_NAO_ENCONTRADO`. UUID inválido retorna **400** `DADOS_INVALIDOS`.
+
+`PATCH /api/v1/patients/:id`, para `admin` ou `secretary`:
+
+```json
+{ "name": "Carlos Pereira Atualizado" }
+```
+
+Resposta **200** com os mesmos campos, o novo `name` e o CPF original. Médico não altera pacientes (**403** `ACESSO_NEGADO`). Corpo vazio, nome vazio ou tentativa de alterar CPF retornam **400** `DADOS_INVALIDOS`.
+
+`DELETE /api/v1/patients/:id` exige `admin` e responde **204** sem corpo. `secretary` e `doctor` recebem **403** `ACESSO_NEGADO`. Paciente inexistente ou já removido recebe **404**. A remoção é lógica (`deleted_at`); consultas/listagens ocultam o paciente removido. A linha histórica permanece no banco e seu CPF continua único/reservado.
+
+Sem token, todas essas rotas retornam **401** `NAO_AUTENTICADO`. A migration adicional mantém os dados da versão anterior e torna nascimento/telefone opcionais no banco. Sua reversão é bloqueada quando há pacientes sem esses dados ou removidos, para não reativar registros nem descartar dados.
+
+A suíte atual tem 186 testes com 100% nas quatro métricas de cobertura dos cinco services. Verificações adicionais do banco estão em [docs/verificacao-pacientes-contrato.md](docs/verificacao-pacientes-contrato.md).
 
 ### Médicos
 

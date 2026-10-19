@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('patients')
 export class PatientEntity {
@@ -11,11 +18,12 @@ export class PatientEntity {
   @Column({ type: 'varchar', length: 11, unique: true })
   public cpf!: string;
 
-  @Column({ name: 'birth_date', type: 'date' })
-  public birthDate!: Date;
+  // Campos da versão anterior são preservados no banco, mas não integram o contrato público.
+  @Column({ name: 'birth_date', type: 'date', nullable: true })
+  public birthDate!: string | null;
 
-  @Column({ type: 'varchar', length: 30 })
-  public phone!: string;
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  public phone!: string | null;
 
   @Column({ type: 'varchar', length: 254, nullable: true })
   public email!: string | null;
@@ -25,4 +33,7 @@ export class PatientEntity {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   public updatedAt!: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  public deletedAt!: Date | null;
 }
