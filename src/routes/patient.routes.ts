@@ -8,11 +8,17 @@ export function createPatientRoutes(
   authenticate: RequestHandler,
 ): Router {
   const routes = Router();
-  routes.use(authenticate, requireRoles(UserRole.ADMIN, UserRole.SECRETARY));
-  routes.post('/', (request, response) => controller.create(request, response));
+  routes.use(authenticate);
+  routes.post('/', requireRoles(UserRole.ADMIN, UserRole.SECRETARY), (request, response) =>
+    controller.create(request, response),
+  );
   routes.get('/', (request, response) => controller.list(request, response));
   routes.get('/:id', (request, response) => controller.getById(request, response));
-  routes.patch('/:id', (request, response) => controller.update(request, response));
-  routes.delete('/:id', (request, response) => controller.delete(request, response));
+  routes.patch('/:id', requireRoles(UserRole.ADMIN, UserRole.SECRETARY), (request, response) =>
+    controller.update(request, response),
+  );
+  routes.delete('/:id', requireRoles(UserRole.ADMIN), (request, response) =>
+    controller.delete(request, response),
+  );
   return routes;
 }
