@@ -15,15 +15,15 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 
 ## Entregas
 
-| Ordem | Entrega / issue                                                               | Branch sugerida          | Estado inicial                    | Aceitação principal                                |
-| ----- | ----------------------------------------------------------------------------- | ------------------------ | --------------------------------- | -------------------------------------------------- |
-| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec` | Concluído (PR #8)                 | Nove correções; contrato de auth; testes e CI      |
-| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`          | Contrato corrigido; aguardando PR | CRUD, CPF único, busca e paginação                 |
-| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`           | Concluído (PR #11)                | Médico + usuário em uma transação; CRM único       |
-| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/escala-agenda`     | Backlog                           | Turnos sem sobreposição; agenda por período        |
-| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/agendamentos`      | Backlog                           | Seis validações, concorrência, posse e status      |
-| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/prontuarios`       | Backlog                           | Escrita e leitura conforme vínculo médico-paciente |
-| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`          | Backlog                           | Deploy automático, SSL, URL pública e entrega      |
+| Ordem | Entrega / issue                                                               | Branch sugerida               | Estado inicial              | Aceitação principal                                |
+| ----- | ----------------------------------------------------------------------------- | ----------------------------- | --------------------------- | -------------------------------------------------- |
+| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec`      | Concluído (PR #8)           | Nove correções; contrato de auth; testes e CI      |
+| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`               | Concluído (PR #12)          | CRUD, CPF único, busca e paginação                 |
+| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`                | Concluído (PR #11)          | Médico + usuário em uma transação; CRM único       |
+| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Implementado; aguardando PR | Turnos sem sobreposição; agenda por período        |
+| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/agendamentos`           | Backlog                     | Seis validações, concorrência, posse e status      |
+| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/prontuarios`            | Backlog                     | Escrita e leitura conforme vínculo médico-paciente |
+| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Backlog                     | Deploy automático, SSL, URL pública e entrega      |
 
 As issues já têm descrições e critérios de aceitação. Criar um **GitHub Project público** e adicionar essas issues, com Backlog, A fazer, Em andamento, Em revisão e Concluído. Vincular cada PR ao card e mover o status durante o desenvolvimento. As ferramentas conectadas desta execução não oferecem criação de GitHub Projects ou configuração de proteção de branch; essas duas configurações ainda precisam ser feitas no GitHub.
 
@@ -50,7 +50,7 @@ Meta de versionamento: **20 commits reais e pelo menos 6 PRs incorporados com ch
 | Login inválido e comparação por hash              | Implementado na primeira etapa |
 | Cinco cenários de sobreposição de períodos        | Agendamentos                   |
 | Criação válida e cinco falhas de turno/conflito   | Agendamentos                   |
-| Turnos sobrepostos recusados e encostados aceitos | Escalas                        |
+| Turnos sobrepostos recusados e encostados aceitos | Implementado em Escalas        |
 | Transição válida e inválida                       | Agendamentos                   |
 | Prontuário com vínculo e sem vínculo              | Prontuários                    |
 
@@ -61,13 +61,13 @@ A verificação real de concorrência deve usar PostgreSQL: mocks unitários nã
 ## Divergências do enunciado
 
 1. **Contagem de commits/PRs:** seção 4.7 fala em 10 commits e 3 PRs; a rubrica da seção 5 exige 20 e 6 para nota máxima. Adotamos 20/6.
-2. **Escala:** o título do PUT na seção 4.9.5 indica admin, mas o resumo inclui admin e doctor. Confirmar com o professor antes desse módulo; se doctor puder alterar, deve ser apenas sua própria escala.
+2. **Escala:** o título e a tabela de erros do PUT na seção 4.9.5 indicam somente admin, mas o resumo inclui admin e doctor. A implementação segue a seção detalhada: somente admin altera, qualquer perfil autenticado lê. Confirmar a divergência com o professor antes da entrega; se doctor puder alterar, limitar à própria escala e acrescentar testes de posse.
 3. **Erro 500:** RF11 exige envelope até 500, mas o catálogo não define código para falha interna. Implementamos `ERRO_INTERNO` apenas para erro inesperado e registramos o erro no servidor. Confirmar esse literal antes da entrega.
 4. **Admin inicial:** o feedback anterior sugeria admin fixo na migration; RP07 da etapa final permite script de seed e exige credenciais por ambiente. O seed segue RP07, sem senha de produção versionada.
 
 ## Antes da entrega no AVA
 
-Revisão literal de 13/10/2026: correção de Pacientes preparada em `fix/patients-api-contract`. Cadastro aceita somente name/cpf; CPF é validado pelo formato de 11 dígitos do contrato. GET admite todos os perfis autenticados, DELETE exige admin, PATCH altera name, listagem recebe name e devolve data/meta. Nova migration preserva dados legados e permite exclusão lógica. Testes HTTP cobrem os perfis e os exemplos literais. Incorporar o PR com check verde antes de iniciar Escalas.
+Revisão de 19/10/2026: correção de Pacientes incorporada pelo PR #12 com check verde. Escalas e agenda implementadas sobre `cd33f23`, com 287 testes e cobertura de 100% em services/rules. As duas novas migrations criam escalas e a base de consultas usada pela agenda. Criação, conflitos concorrentes e transições de agendamentos continuam na próxima entrega; nenhuma rota de escrita de agendamento é declarada pronta. Evidências: [verificação de Escalas e Agenda](verificacao-escalas-agenda.md).
 
 - [ ] Todos os endpoints da seção 4.9 implementados e conferidos literalmente.
 - [ ] Casos mínimos e cobertura de pelo menos 80% nas quatro métricas.

@@ -6,7 +6,7 @@ Esta é a evolução do mini-projeto de autenticação da Semana 07. A proposta 
 
 ## Estado do projeto
 
-**Etapa 3 do projeto final: base segura, pacientes, médicos, migrations e CI.**
+**Etapa 4 do projeto final: base segura, pacientes, médicos, escalas, agenda, migrations e CI.**
 
 Implementado nesta etapa:
 
@@ -24,7 +24,10 @@ Implementado nesta etapa:
 - Pacientes com cadastro mínimo `name`/`cpf`, CPF de 11 dígitos único, filtro `name`, listagem `data/meta` e exclusão lógica. Leitura autenticada; cadastro/alteração para `admin` e `secretary`; exclusão somente por `admin`.
 - Cadastro de médico com usuário `doctor` na mesma transação, CRM único, consultas autenticadas e paginação no envelope `data/meta`.
 
-Escalas, agendamentos, prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
+- Escala semanal substituída integralmente por admin, com turnos sem sobreposição.
+- Agenda autenticada por período de até 31 dias locais em `America/Sao_Paulo`, com consultas persistidas e sem canceladas.
+
+Criação de agendamentos, transições de status, prontuários e deploy são as próximas entregas. A tabela de consultas e sua leitura pela agenda estão preparadas; os endpoints de escrita de agendamentos ainda não existem. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
 
 O módulo de Pacientes foi ajustado ao contrato literal da seção 4.9.3. O corpo de cadastro contém apenas `name` e `cpf`; o PATCH altera apenas `name`. Campos adicionais da versão anterior permanecem preservados no banco, mas não integram a API pública.
 
@@ -127,6 +130,8 @@ O SQL avulso foi removido: as migrations são a fonte versionada do schema.
 
 A terceira migration cria `patients`. A quarta cria `doctors`, com CRM único, vínculo obrigatório com `users` e no máximo um médico por usuário. `DoctorRepository.createWithUser` recebe um hash e grava usuário e médico com os repositórios do mesmo `EntityManager` transacional. Uma falha em qualquer gravação reverte as duas. A reversão da quarta migration exige que `doctors` esteja vazia, para evitar usuários médicos sem registro profissional.
 
+A quinta ajusta o contrato de pacientes, preservando dados anteriores. A sexta cria a escala semanal (`doctor_work_schedules`), e a sétima cria `appointments`, com vínculos obrigatórios de médico/paciente, período válido e status restrito a `scheduled`, `in_progress`, `done` e `cancelled`. Índices parciais apoiam a busca de consultas não canceladas. A reversão das duas últimas exige suas tabelas vazias, para não apagar escalas nem histórico de consultas. Substituir ou limpar uma escala altera somente sua própria tabela.
+
 ## Arquitetura e nomes
 
 O controller valida o DTO e chama o service. O service aplica a regra de negócio sobre interfaces de repositório, senha e token. O adaptador de repositório usa TypeORM. `composition-root.ts` monta os objetos uma vez e injeta as dependências pelos construtores.
@@ -141,7 +146,7 @@ Services lançam `AppError` com códigos de domínio e não conhecem status HTTP
 | `src/config/`                              | Schemas de configuração                           |
 | `src/controllers/`, `src/routes/`          | Fronteira HTTP                                    |
 | `src/dtos/`                                | Validação e contratos de entrada/saída            |
-| `src/services/`                            | Regras de negócio                                 |
+| `src/services/`, `src/rules/`              | Regras de negócio                                 |
 | `src/domain/`, `src/errors/`, `src/ports/` | Tipos, erros de domínio e interfaces              |
 | `src/repositories/`                        | Adaptadores TypeORM                               |
 | `src/entities/`, `src/database/`           | Modelagem, migrations e seed                      |
@@ -167,7 +172,7 @@ Para formatação e correções: `npm run format` e `npm run lint:fix`. Instale 
 
 A cobertura considera **apenas `src/**/*.service.ts` e `src/**/*.rules.ts`**, onde ficam as regras de negócio. Controllers, entidades, migrations, configuração e adaptadores ficam fora da conta. Novos services/rules entram automaticamente. O limiar mínimo é 80% em statements, branches, functions e lines; abaixo disso o comando falha.
 
-Nesta primeira etapa, são 82 testes, com 100% nas quatro métricas dos três services existentes. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt e envelope central de erro. Os casos exigidos de agendamento, escala e prontuário serão adicionados com os módulos correspondentes.
+Na etapa atual, são **287 testes**, com **100% nas quatro métricas dos sete services e dois arquivos de regras**. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt, pacientes, médicos, escalas, agenda e envelope central de erro. Os casos exigidos de criação/transição de agendamentos e prontuários serão adicionados com os módulos correspondentes.
 
 Os testes de services são unitários e usam dublês nas portas. Testes HTTP usam servidores Express temporários em `127.0.0.1`, JWT real e os mesmos dublês, sem banco externo. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
 
@@ -175,20 +180,23 @@ O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por
 
 ## Endpoints implementados
 
-| Método | Rota                   | Acesso          |
-| ------ | ---------------------- | --------------- |
-| GET    | `/api/v1/health`       | Público         |
-| POST   | `/api/v1/auth/login`   | Público         |
-| GET    | `/api/v1/users/me`     | Autenticado     |
-| POST   | `/api/v1/users`        | Admin           |
-| POST   | `/api/v1/patients`     | Admin/secretary |
-| GET    | `/api/v1/patients`     | Autenticado     |
-| GET    | `/api/v1/patients/:id` | Autenticado     |
-| PATCH  | `/api/v1/patients/:id` | Admin/secretary |
-| DELETE | `/api/v1/patients/:id` | Admin           |
-| POST   | `/api/v1/doctors`      | Admin           |
-| GET    | `/api/v1/doctors`      | Autenticado     |
-| GET    | `/api/v1/doctors/:id`  | Autenticado     |
+| Método | Rota                                      | Acesso          |
+| ------ | ----------------------------------------- | --------------- |
+| GET    | `/api/v1/health`                          | Público         |
+| POST   | `/api/v1/auth/login`                      | Público         |
+| GET    | `/api/v1/users/me`                        | Autenticado     |
+| POST   | `/api/v1/users`                           | Admin           |
+| POST   | `/api/v1/patients`                        | Admin/secretary |
+| GET    | `/api/v1/patients`                        | Autenticado     |
+| GET    | `/api/v1/patients/:id`                    | Autenticado     |
+| PATCH  | `/api/v1/patients/:id`                    | Admin/secretary |
+| DELETE | `/api/v1/patients/:id`                    | Admin           |
+| POST   | `/api/v1/doctors`                         | Admin           |
+| GET    | `/api/v1/doctors`                         | Autenticado     |
+| GET    | `/api/v1/doctors/:id`                     | Autenticado     |
+| PUT    | `/api/v1/doctors/:doctorId/work-schedule` | Admin           |
+| GET    | `/api/v1/doctors/:doctorId/work-schedule` | Autenticado     |
+| GET    | `/api/v1/doctors/:doctorId/calendar`      | Autenticado     |
 
 O cadastro público `/auth/register` foi removido. Não existe `/api/v1/auth/register`; a criação é interna por `POST /api/v1/users`, conforme RF13. As rotas antigas sem prefixo não são aliases.
 
@@ -312,7 +320,7 @@ Resposta **200** com os mesmos campos, o novo `name` e o CPF original. Médico n
 
 Sem token, todas essas rotas retornam **401** `NAO_AUTENTICADO`. A migration adicional mantém os dados da versão anterior e torna nascimento/telefone opcionais no banco. Sua reversão é bloqueada quando há pacientes sem esses dados ou removidos, para não reativar registros nem descartar dados.
 
-A suíte atual tem 186 testes com 100% nas quatro métricas de cobertura dos cinco services. Verificações adicionais do banco estão em [docs/verificacao-pacientes-contrato.md](docs/verificacao-pacientes-contrato.md).
+Na entrega da correção de Pacientes, a suíte tinha 186 testes com 100% nas quatro métricas de cobertura dos cinco services. Verificações adicionais do banco estão em [docs/verificacao-pacientes-contrato.md](docs/verificacao-pacientes-contrato.md).
 
 ### Médicos
 
@@ -369,6 +377,58 @@ O médico pode autenticar imediatamente com o e-mail e a senha fornecidos. O cli
 O filtro `name` busca parte do nome sem distinguir maiúsculas e minúsculas, com consulta parametrizada. `page` começa em 1; `pageSize` tem padrão 20 e máximo 100. Uma página vazia retorna `data: []`; `meta.total` conta todos os médicos do filtro. Sem resultados, `totalPages` é 0.
 
 CRM repetido: **409** `CRM_JA_CADASTRADO`. E-mail repetido: **409** `EMAIL_JA_CADASTRADO`. Corpo ou query inválidos: **400** `DADOS_INVALIDOS`. Sem token: **401** `NAO_AUTENTICADO`. Cadastro por `doctor` ou `secretary`: **403** `ACESSO_NEGADO`. CRM duplicado e falhas de gravação não deixam usuário de acesso parcial.
+
+### Escala semanal
+
+`PUT /api/v1/doctors/:doctorId/work-schedule`, com token de admin, substitui toda a escala:
+
+```json
+{
+  "shifts": [
+    { "weekDay": 2, "startTime": "08:00", "endTime": "12:00", "slotDurationMinutes": 30 },
+    { "weekDay": 2, "startTime": "13:00", "endTime": "17:00", "slotDurationMinutes": 30 }
+  ]
+}
+```
+
+Resposta **200** com o mesmo objeto `shifts` enviado. `weekDay` vai de 0 (domingo) a 6 (sábado); horas usam `HH:MM`, de `00:00` a `23:59`. Início deve preceder o fim, e duração deve ser um inteiro positivo em minutos. Turnos do mesmo dia não podem se sobrepor; turnos encostados, como `08:00–10:00` e `10:00–12:00`, são aceitos. Turnos não atravessam a meia-noite.
+
+Enviar `{"shifts":[]}` limpa a escala e responde **200** com `{"shifts":[]}`. A operação é transacional, bloqueia a linha do médico e grava a escala inteira. Consultas existentes permanecem intactas, inclusive quando deixam de se encaixar na nova escala (RN15).
+
+`GET /api/v1/doctors/:doctorId/work-schedule`, com qualquer token válido, responde **200** com `{"shifts":[...]}` no formato acima. Médico existente sem escala retorna `{"shifts":[]}`.
+
+Sem token: **401** `NAO_AUTENTICADO`. PUT por `doctor` ou `secretary`: **403** `ACESSO_NEGADO`. Médico inexistente: **404** `RECURSO_NAO_ENCONTRADO`. UUID, horários, duração ou sobreposição inválidos: **400** `DADOS_INVALIDOS`.
+
+Decisão de acesso: o resumo do enunciado inclui `doctor` no PUT, mas a descrição detalhada e sua tabela de erros na seção 4.9.5 dizem somente admin. Esta implementação segue a seção detalhada; a divergência está registrada no plano para confirmação com o professor.
+
+### Agenda do médico
+
+`GET /api/v1/doctors/:doctorId/calendar?from=2026-10-13&to=2026-10-13`, com qualquer token válido, responde **200**:
+
+```json
+{
+  "workSchedule": {
+    "shifts": [
+      { "weekDay": 2, "startTime": "08:00", "endTime": "12:00", "slotDurationMinutes": 30 }
+    ]
+  },
+  "appointments": [
+    {
+      "id": "b8a7bb38-c016-4a68-8eaf-6a405c91c521",
+      "patientId": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+      "startsAt": "2026-10-13T11:00:00.000Z",
+      "endsAt": "2026-10-13T11:30:00.000Z",
+      "status": "scheduled"
+    }
+  ]
+}
+```
+
+`from` e `to` são obrigatórios em `YYYY-MM-DD`; os dois dias são inclusivos e o período tem de 1 a 31 dias. O filtro considera dias locais em `America/Sao_Paulo`, com as regras do fuso IANA, e consulta o intervalo do início de `from` até antes do dia seguinte a `to`. São retornadas consultas que intersectam esse intervalo, em ordem de início e ID. Os timestamps da resposta ficam em UTC.
+
+Consultas `cancelled` são omitidas; `scheduled`, `in_progress` e `done` permanecem. A escala é semanal, sem geração de slots nem paginação. Sem dados, a resposta é `{"workSchedule":{"shifts":[]},"appointments":[]}`. Sem token: **401**; médico inexistente: **404**; UUID, datas inexistentes, ordem invertida ou mais de 31 dias: **400**.
+
+Nesta etapa, a consulta ao banco já está implementada, mas a criação pública de agendamentos será entregue no próximo módulo. Portanto, uma instalação nova terá `appointments: []`. Evidências de SQL, rollback e limites da verificação estão em [docs/verificacao-escalas-agenda.md](docs/verificacao-escalas-agenda.md).
 
 ### Erros
 
