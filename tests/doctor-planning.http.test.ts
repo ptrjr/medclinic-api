@@ -6,12 +6,14 @@ import { UserController } from '../src/controllers/user.controller';
 import { PatientController } from '../src/controllers/patient.controller';
 import { DoctorController } from '../src/controllers/doctor.controller';
 import { DoctorPlanningController } from '../src/controllers/doctor-planning.controller';
+import { AppointmentController } from '../src/controllers/appointment.controller';
 import { DoctorCalendarService } from '../src/services/doctor-calendar.service';
 import { WorkScheduleService } from '../src/services/work-schedule.service';
 import { AuthService } from '../src/services/auth.service';
 import { UserService } from '../src/services/user.service';
 import { PatientService } from '../src/services/patient.service';
 import { DoctorService } from '../src/services/doctor.service';
+import { AppointmentService } from '../src/services/appointment.service';
 import { UserRole } from '../src/domain/user';
 import { JwtTokenProvider } from '../src/infrastructure/jwt-token-provider';
 import { createAuthMiddleware } from '../src/middlewares/auth.middleware';
@@ -19,6 +21,7 @@ import { createPatientDoubles } from './patient-doubles';
 import { admin } from './doubles';
 import { doctor } from './doctor-doubles';
 import { consultation, createPlanningDoubles, shift } from './planning-doubles';
+import { createAppointmentDoubles } from './appointment-doubles';
 
 const f = createPlanningDoubles();
 const tokens = new JwtTokenProvider('segredo-ficticio-http-para-escalas-e-agenda', 3600);
@@ -52,6 +55,9 @@ beforeAll(async () => {
     doctorPlanningController: new DoctorPlanningController(
       new WorkScheduleService(f.doctors, f.schedules),
       new DoctorCalendarService(f.doctors, f.schedules, f.appointments),
+    ),
+    appointmentController: new AppointmentController(
+      new AppointmentService(createAppointmentDoubles().appointments, f.doctors),
     ),
     authenticate: createAuthMiddleware(tokens),
     logError: log,
