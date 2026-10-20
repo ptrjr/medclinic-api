@@ -4,6 +4,7 @@ import type { UserController } from './controllers/user.controller';
 import type { PatientController } from './controllers/patient.controller';
 import type { DoctorController } from './controllers/doctor.controller';
 import type { DoctorPlanningController } from './controllers/doctor-planning.controller';
+import type { AppointmentController } from './controllers/appointment.controller';
 import { AppError } from './errors/app-error';
 import { createErrorMiddleware, type ErrorLogger } from './middlewares/error.middleware';
 import { createAuthRoutes } from './routes/auth.routes';
@@ -11,6 +12,7 @@ import { createUserRoutes } from './routes/user.routes';
 import { createPatientRoutes } from './routes/patient.routes';
 import { createDoctorRoutes } from './routes/doctor.routes';
 import { createDoctorPlanningRoutes } from './routes/doctor-planning.routes';
+import { createAppointmentRoutes } from './routes/appointment.routes';
 
 export interface AppDependencies {
   authController: AuthController;
@@ -18,6 +20,7 @@ export interface AppDependencies {
   patientController: PatientController;
   doctorController: DoctorController;
   doctorPlanningController: DoctorPlanningController;
+  appointmentController: AppointmentController;
   authenticate: RequestHandler;
   logError?: ErrorLogger;
 }
@@ -43,6 +46,10 @@ export function createApp(dependencies: AppDependencies): Express {
   app.use(
     '/api/v1/doctors',
     createDoctorRoutes(dependencies.doctorController, dependencies.authenticate),
+  );
+  app.use(
+    '/api/v1/appointments',
+    createAppointmentRoutes(dependencies.appointmentController, dependencies.authenticate),
   );
   app.use(() => {
     throw new AppError('RECURSO_NAO_ENCONTRADO', 'Rota não encontrada.');

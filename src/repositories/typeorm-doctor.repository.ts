@@ -17,6 +17,13 @@ export class TypeOrmDoctorRepository implements DoctorRepositoryPort {
     return doctor ? this.toDoctor(doctor) : null;
   }
 
+  public async findByUserId(userId: string): Promise<Doctor | null> {
+    const doctor = await this.dataSource
+      .getRepository(DoctorEntity)
+      .findOne({ where: { userId }, relations: { user: true } });
+    return doctor ? this.toDoctor(doctor) : null;
+  }
+
   public async findByCrm(crm: string): Promise<Doctor | null> {
     const doctor = await this.dataSource
       .getRepository(DoctorEntity)

@@ -6,7 +6,7 @@ Esta é a evolução do mini-projeto de autenticação da Semana 07. A proposta 
 
 ## Estado do projeto
 
-**Etapa 4 do projeto final: base segura, pacientes, médicos, escalas, agenda, migrations e CI.**
+**Etapa 5 do projeto final: base segura, pacientes, médicos, escalas, agenda, agendamentos, migrations e CI.**
 
 Implementado nesta etapa:
 
@@ -26,8 +26,9 @@ Implementado nesta etapa:
 
 - Escala semanal substituída integralmente por admin, com turnos sem sobreposição.
 - Agenda autenticada por período de até 31 dias locais em `America/Sao_Paulo`, com consultas persistidas e sem canceladas.
+- Agendamento por `admin`/`secretary`, com duração calculada pela escala, bloqueios transacionais para médico e paciente, prevenção de conflitos e ciclo de status autorizado.
 
-Criação de agendamentos, transições de status, prontuários e deploy são as próximas entregas. A tabela de consultas e sua leitura pela agenda estão preparadas; os endpoints de escrita de agendamentos ainda não existem. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
+Prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
 
 O módulo de Pacientes foi ajustado ao contrato literal da seção 4.9.3. O corpo de cadastro contém apenas `name` e `cpf`; o PATCH altera apenas `name`. Campos adicionais da versão anterior permanecem preservados no banco, mas não integram a API pública.
 
@@ -172,7 +173,7 @@ Para formatação e correções: `npm run format` e `npm run lint:fix`. Instale 
 
 A cobertura considera **apenas `src/**/*.service.ts` e `src/**/*.rules.ts`**, onde ficam as regras de negócio. Controllers, entidades, migrations, configuração e adaptadores ficam fora da conta. Novos services/rules entram automaticamente. O limiar mínimo é 80% em statements, branches, functions e lines; abaixo disso o comando falha.
 
-Na etapa atual, são **287 testes**, com **100% nas quatro métricas dos sete services e dois arquivos de regras**. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt, pacientes, médicos, escalas, agenda e envelope central de erro. Os casos exigidos de criação/transição de agendamentos e prontuários serão adicionados com os módulos correspondentes.
+Na etapa atual, são **342 testes**, com **100% nas quatro métricas dos oito services e três arquivos de regras**. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt, pacientes, médicos, escalas, agenda, criação e transições de agendamentos e envelope central de erro. Os casos de prontuários serão adicionados com o módulo correspondente.
 
 Os testes de services são unitários e usam dublês nas portas. Testes HTTP usam servidores Express temporários em `127.0.0.1`, JWT real e os mesmos dublês, sem banco externo. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
 
@@ -180,23 +181,27 @@ O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por
 
 ## Endpoints implementados
 
-| Método | Rota                                      | Acesso          |
-| ------ | ----------------------------------------- | --------------- |
-| GET    | `/api/v1/health`                          | Público         |
-| POST   | `/api/v1/auth/login`                      | Público         |
-| GET    | `/api/v1/users/me`                        | Autenticado     |
-| POST   | `/api/v1/users`                           | Admin           |
-| POST   | `/api/v1/patients`                        | Admin/secretary |
-| GET    | `/api/v1/patients`                        | Autenticado     |
-| GET    | `/api/v1/patients/:id`                    | Autenticado     |
-| PATCH  | `/api/v1/patients/:id`                    | Admin/secretary |
-| DELETE | `/api/v1/patients/:id`                    | Admin           |
-| POST   | `/api/v1/doctors`                         | Admin           |
-| GET    | `/api/v1/doctors`                         | Autenticado     |
-| GET    | `/api/v1/doctors/:id`                     | Autenticado     |
-| PUT    | `/api/v1/doctors/:doctorId/work-schedule` | Admin           |
-| GET    | `/api/v1/doctors/:doctorId/work-schedule` | Autenticado     |
-| GET    | `/api/v1/doctors/:doctorId/calendar`      | Autenticado     |
+| Método | Rota                                      | Acesso             |
+| ------ | ----------------------------------------- | ------------------ |
+| GET    | `/api/v1/health`                          | Público            |
+| POST   | `/api/v1/auth/login`                      | Público            |
+| GET    | `/api/v1/users/me`                        | Autenticado        |
+| POST   | `/api/v1/users`                           | Admin              |
+| POST   | `/api/v1/patients`                        | Admin/secretary    |
+| GET    | `/api/v1/patients`                        | Autenticado        |
+| GET    | `/api/v1/patients/:id`                    | Autenticado        |
+| PATCH  | `/api/v1/patients/:id`                    | Admin/secretary    |
+| DELETE | `/api/v1/patients/:id`                    | Admin              |
+| POST   | `/api/v1/doctors`                         | Admin              |
+| GET    | `/api/v1/doctors`                         | Autenticado        |
+| GET    | `/api/v1/doctors/:id`                     | Autenticado        |
+| PUT    | `/api/v1/doctors/:doctorId/work-schedule` | Admin              |
+| GET    | `/api/v1/doctors/:doctorId/work-schedule` | Autenticado        |
+| GET    | `/api/v1/doctors/:doctorId/calendar`      | Autenticado        |
+| POST   | `/api/v1/appointments`                    | Admin/secretary    |
+| GET    | `/api/v1/appointments`                    | Autenticado        |
+| GET    | `/api/v1/appointments/:id`                | Autenticado        |
+| PATCH  | `/api/v1/appointments/:id/status`         | Conforme transição |
 
 O cadastro público `/auth/register` foi removido. Não existe `/api/v1/auth/register`; a criação é interna por `POST /api/v1/users`, conforme RF13. As rotas antigas sem prefixo não são aliases.
 
@@ -428,7 +433,69 @@ Decisão de acesso: o resumo do enunciado inclui `doctor` no PUT, mas a descriç
 
 Consultas `cancelled` são omitidas; `scheduled`, `in_progress` e `done` permanecem. A escala é semanal, sem geração de slots nem paginação. Sem dados, a resposta é `{"workSchedule":{"shifts":[]},"appointments":[]}`. Sem token: **401**; médico inexistente: **404**; UUID, datas inexistentes, ordem invertida ou mais de 31 dias: **400**.
 
-Nesta etapa, a consulta ao banco já está implementada, mas a criação pública de agendamentos será entregue no próximo módulo. Portanto, uma instalação nova terá `appointments: []`. Evidências de SQL, rollback e limites da verificação estão em [docs/verificacao-escalas-agenda.md](docs/verificacao-escalas-agenda.md).
+Consultas podem ser criadas por `POST /api/v1/appointments`, descrito abaixo. A agenda continua exibindo somente consultas não canceladas. Evidências de SQL, rollback e limites da verificação da etapa anterior estão em [docs/verificacao-escalas-agenda.md](docs/verificacao-escalas-agenda.md).
+
+### Agendamentos
+
+`POST /api/v1/appointments`, com token de `admin` ou `secretary`:
+
+```json
+{
+  "doctorId": "338e7dbe-0f78-4d60-9de4-ab92a20de060",
+  "patientId": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+  "startsAt": "2026-10-20T12:00:00.000Z"
+}
+```
+
+Resposta **201**:
+
+```json
+{
+  "id": "b8a7bb38-c016-4a68-8eaf-6a405c91c521",
+  "doctorId": "338e7dbe-0f78-4d60-9de4-ab92a20de060",
+  "patientId": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+  "startsAt": "2026-10-20T12:00:00.000Z",
+  "endsAt": "2026-10-20T12:30:00.000Z",
+  "status": "scheduled"
+}
+```
+
+O corpo aceita somente `doctorId`, `patientId` e `startsAt` com offset de fuso. O servidor calcula `endsAt` a partir da duração do turno. O início deve cair no dia/turno local da escala em `America/Sao_Paulo`, alinhar com a grade e permitir que a consulta inteira termine até o fim do turno. Médico ou paciente inexistente (ou paciente removido) retorna **404** `RECURSO_NAO_ENCONTRADO`; horário fora da escala retorna **422** `HORARIO_FORA_DA_ESCALA`; conflito com consulta ativa do médico retorna **409** `HORARIO_INDISPONIVEL`; conflito com consulta ativa do paciente, **409** `PACIENTE_INDISPONIVEL`. Intervalos que apenas encostam são aceitos. Consultas canceladas não bloqueiam horários.
+
+A criação bloqueia as linhas do médico e do paciente na mesma transação, sempre nessa ordem, e faz validações e gravação com o `EntityManager` transacional. Isso serializa concorrência pelo mesmo médico e também pelo mesmo paciente em médicos diferentes.
+
+`GET /api/v1/appointments?doctorId=<uuid>&patientId=<uuid>&status=scheduled&from=2026-10-20&to=2026-10-20&page=1&pageSize=20`, autenticado, responde **200**:
+
+```json
+{
+  "data": [
+    {
+      "id": "b8a7bb38-c016-4a68-8eaf-6a405c91c521",
+      "doctorId": "338e7dbe-0f78-4d60-9de4-ab92a20de060",
+      "patientId": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+      "startsAt": "2026-10-20T12:00:00.000Z",
+      "endsAt": "2026-10-20T12:30:00.000Z",
+      "status": "scheduled"
+    }
+  ],
+  "meta": { "total": 1, "page": 1, "pageSize": 20, "totalPages": 1 }
+}
+```
+
+Todos os filtros são opcionais. `from`/`to` são datas locais inclusivas em `YYYY-MM-DD`, `page` começa em 1 e `pageSize` vai de 1 a 100 (padrão 20). Médico sem perfil admin vê somente as próprias consultas; pedir outro `doctorId` resulta em página vazia. `GET /api/v1/appointments/:id` retorna uma consulta; médico recebe **403** `ACESSO_NEGADO` se ela pertencer a outro médico. Secretária e admin podem consultar qualquer agendamento.
+
+`PATCH /api/v1/appointments/:id/status` recebe `{"status":"in_progress"}` ou outro status do enum e responde **200** com o agendamento atualizado. Transições permitidas e perfis:
+
+| Transição                   | Perfis autorizados              |
+| --------------------------- | ------------------------------- |
+| `scheduled` → `in_progress` | Admin ou médico dono            |
+| `scheduled` → `cancelled`   | Admin, secretary ou médico dono |
+| `in_progress` → `done`      | Admin ou médico dono            |
+| `in_progress` → `cancelled` | Admin ou médico dono            |
+
+Transição impossível retorna **422** `TRANSICAO_INVALIDA`; status inválido retorna **400** `DADOS_INVALIDOS`; falta de permissão retorna **403** `ACESSO_NEGADO`. Cancelar libera o horário para nova consulta.
+
+Verificação desta etapa: 342 testes, lint, formatação, typecheck e build aprovados. A concorrência também foi exercitada por HTTP contra PostgreSQL-compatível PGlite, incluindo duas requisições simultâneas; essa prova não substitui ainda a execução em PostgreSQL 16. Detalhes: [docs/verificacao-agendamentos.md](docs/verificacao-agendamentos.md).
 
 ### Erros
 

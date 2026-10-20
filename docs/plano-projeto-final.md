@@ -20,8 +20,8 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 | 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec`      | Concluído (PR #8)           | Nove correções; contrato de auth; testes e CI      |
 | 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`               | Concluído (PR #12)          | CRUD, CPF único, busca e paginação                 |
 | 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`                | Concluído (PR #11)          | Médico + usuário em uma transação; CRM único       |
-| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Implementado; aguardando PR | Turnos sem sobreposição; agenda por período        |
-| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/agendamentos`           | Backlog                     | Seis validações, concorrência, posse e status      |
+| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Concluído (PR #13)          | Turnos sem sobreposição; agenda por período        |
+| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/appointments`           | Implementado; aguardando PR | Validações, concorrência, posse e ciclo de status  |
 | 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/prontuarios`            | Backlog                     | Escrita e leitura conforme vínculo médico-paciente |
 | 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Backlog                     | Deploy automático, SSL, URL pública e entrega      |
 
@@ -67,7 +67,7 @@ A verificação real de concorrência deve usar PostgreSQL: mocks unitários nã
 
 ## Antes da entrega no AVA
 
-Revisão de 19/10/2026: correção de Pacientes incorporada pelo PR #12 com check verde. Escalas e agenda implementadas sobre `cd33f23`, com 287 testes e cobertura de 100% em services/rules. As duas novas migrations criam escalas e a base de consultas usada pela agenda. Criação, conflitos concorrentes e transições de agendamentos continuam na próxima entrega; nenhuma rota de escrita de agendamento é declarada pronta. Evidências: [verificação de Escalas e Agenda](verificacao-escalas-agenda.md).
+Revisão de 20/10/2026: escalas e agenda incorporadas pelo PR #13. O módulo de agendamentos está implementado na branch `feat/appointments`: criação transacional com bloqueio do médico e do paciente, listagem com filtros/paginação, controle de posse e transições de status. A suíte registra 342 testes e 100% nas quatro métricas de services/rules. A concorrência foi exercitada por HTTP usando PGlite PostgreSQL-compatível; ainda falta executar a validação final em PostgreSQL 16. Evidências: [verificação de Escalas e Agenda](verificacao-escalas-agenda.md) e [verificação de Agendamentos](verificacao-agendamentos.md).
 
 - [ ] Todos os endpoints da seção 4.9 implementados e conferidos literalmente.
 - [ ] Casos mínimos e cobertura de pelo menos 80% nas quatro métricas.

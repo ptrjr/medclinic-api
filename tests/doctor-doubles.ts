@@ -25,6 +25,7 @@ export const doctorInput = {
 export function createDoctorDoubles() {
   const doctors = {
     findById: vi.fn<DoctorRepositoryPort['findById']>().mockResolvedValue(doctor),
+    findByUserId: vi.fn<DoctorRepositoryPort['findByUserId']>().mockResolvedValue(doctor),
     findByCrm: vi.fn<DoctorRepositoryPort['findByCrm']>().mockResolvedValue(null),
     list: vi.fn<DoctorRepositoryPort['list']>().mockResolvedValue({ items: [doctor], total: 1 }),
     createWithUser: vi.fn<DoctorRepositoryPort['createWithUser']>().mockResolvedValue(doctor),
