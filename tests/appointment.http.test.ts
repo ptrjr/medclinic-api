@@ -26,6 +26,9 @@ import {
 } from './appointment-doubles';
 import { createPatientDoubles } from './patient-doubles';
 import { createPlanningDoubles } from './planning-doubles';
+import { MedicalRecordController } from '../src/controllers/medical-record.controller';
+import { MedicalRecordService } from '../src/services/medical-record.service';
+import { createMedicalRecordDoubles } from './medical-record-doubles';
 
 const domain = createDoctorDoubles();
 const repository = createAppointmentDoubles();
@@ -63,6 +66,7 @@ async function call(
 }
 
 beforeAll(async () => {
+  const medical = createMedicalRecordDoubles();
   const planning = createPlanningDoubles();
   const schedules = planning.schedules;
   const appointments = createApp({
@@ -78,6 +82,9 @@ beforeAll(async () => {
     ),
     appointmentController: new AppointmentController(
       new AppointmentService(repository.appointments, domain.doctors),
+    ),
+    medicalRecordController: new MedicalRecordController(
+      new MedicalRecordService(medical.records, medical.patients, medical.doctors),
     ),
     authenticate: createAuthMiddleware(tokens),
     logError: log,

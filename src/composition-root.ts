@@ -14,6 +14,9 @@ import { AppointmentEntity } from './entities/appointment.entity';
 import { AppointmentController } from './controllers/appointment.controller';
 import { AppointmentService } from './services/appointment.service';
 import { TypeOrmAppointmentRepository } from './repositories/typeorm-appointment.repository';
+import { MedicalRecordController } from './controllers/medical-record.controller';
+import { MedicalRecordService } from './services/medical-record.service';
+import { TypeOrmMedicalRecordRepository } from './repositories/typeorm-medical-record.repository';
 import { DoctorService } from './services/doctor.service';
 import { TypeOrmDoctorRepository } from './repositories/typeorm-doctor.repository';
 import { PatientEntity } from './entities/patient.entity';
@@ -37,6 +40,7 @@ export function composeApplication(dataSource: DataSource, config: AppEnvironmen
     dataSource.getRepository(AppointmentEntity),
   );
   const appointmentRepository = new TypeOrmAppointmentRepository(dataSource);
+  const medicalRecords = new TypeOrmMedicalRecordRepository(dataSource);
   const tokens = new JwtTokenProvider(config.JWT_SECRET, config.JWT_EXPIRES_IN);
   const authService = new AuthService(users, passwords, tokens);
   const userService = new UserService(users, passwords);
@@ -51,6 +55,9 @@ export function composeApplication(dataSource: DataSource, config: AppEnvironmen
     ),
     appointmentController: new AppointmentController(
       new AppointmentService(appointmentRepository, doctors),
+    ),
+    medicalRecordController: new MedicalRecordController(
+      new MedicalRecordService(medicalRecords, patients, doctors),
     ),
     authenticate: createAuthMiddleware(tokens),
   });
