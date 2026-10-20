@@ -6,7 +6,7 @@ Esta é a evolução do mini-projeto de autenticação da Semana 07. A proposta 
 
 ## Estado do projeto
 
-**Etapa 5 do projeto final: base segura, pacientes, médicos, escalas, agenda, agendamentos, migrations e CI.**
+**Etapa 6 do projeto final: base segura, pacientes, médicos, escalas, agenda, agendamentos, prontuários, migrations e CI.**
 
 Implementado nesta etapa:
 
@@ -27,8 +27,9 @@ Implementado nesta etapa:
 - Escala semanal substituída integralmente por admin, com turnos sem sobreposição.
 - Agenda autenticada por período de até 31 dias locais em `America/Sao_Paulo`, com consultas persistidas e sem canceladas.
 - Agendamento por `admin`/`secretary`, com duração calculada pela escala, bloqueios transacionais para médico e paciente, prevenção de conflitos e ciclo de status autorizado.
+- Prontuário com autoria pelo médico autenticado, leitura/escrita por vínculo de atendimento, leitura administrativa e paginação.
 
-Prontuários e deploy são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
+Publicação e revisão final dos requisitos são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
 
 O módulo de Pacientes foi ajustado ao contrato literal da seção 4.9.3. O corpo de cadastro contém apenas `name` e `cpf`; o PATCH altera apenas `name`. Campos adicionais da versão anterior permanecem preservados no banco, mas não integram a API pública.
 
@@ -133,6 +134,8 @@ A terceira migration cria `patients`. A quarta cria `doctors`, com CRM único, v
 
 A quinta ajusta o contrato de pacientes, preservando dados anteriores. A sexta cria a escala semanal (`doctor_work_schedules`), e a sétima cria `appointments`, com vínculos obrigatórios de médico/paciente, período válido e status restrito a `scheduled`, `in_progress`, `done` e `cancelled`. Índices parciais apoiam a busca de consultas não canceladas. A reversão das duas últimas exige suas tabelas vazias, para não apagar escalas nem histórico de consultas. Substituir ou limpar uma escala altera somente sua própria tabela.
 
+A oitava cria `medical_records`, com texto obrigatório, data `timestamptz`, chaves estrangeiras de paciente/médico e índice de ordenação por paciente e data. Acrescenta também um índice para consultas que estabelecem vínculo médico-paciente (`in_progress` ou `done`). A reversão é bloqueada se houver prontuários, preservando os dados. Pacientes removidos logicamente deixam de aparecer na API de prontuários, mas os registros permanecem no banco.
+
 ## Arquitetura e nomes
 
 O controller valida o DTO e chama o service. O service aplica a regra de negócio sobre interfaces de repositório, senha e token. O adaptador de repositório usa TypeORM. `composition-root.ts` monta os objetos uma vez e injeta as dependências pelos construtores.
@@ -173,7 +176,9 @@ Para formatação e correções: `npm run format` e `npm run lint:fix`. Instale 
 
 A cobertura considera **apenas `src/**/*.service.ts` e `src/**/*.rules.ts`**, onde ficam as regras de negócio. Controllers, entidades, migrations, configuração e adaptadores ficam fora da conta. Novos services/rules entram automaticamente. O limiar mínimo é 80% em statements, branches, functions e lines; abaixo disso o comando falha.
 
-Na etapa atual, são **342 testes**, com **100% nas quatro métricas dos oito services e três arquivos de regras**. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt, pacientes, médicos, escalas, agenda, criação e transições de agendamentos e envelope central de erro. Os casos de prontuários serão adicionados com o módulo correspondente.
+Na etapa atual, são **384 testes**, com **100% nas quatro métricas dos nove services e três arquivos de regras**. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt, pacientes, médicos, escalas, agenda, criação e transições de agendamentos, prontuários e envelope central de erro.
+
+Os 42 testes novos de Prontuários estão em um único arquivo, `tests/medical-record.unit.test.ts`: usam dublês nas portas e não dependem de banco, rede ou variáveis de ambiente. Cobrem vínculo concedido/negado, autoria derivada do token, privilégios, paciente inexistente, DTOs e paginação. A verificação adicional da API com persistência está descrita em [docs/verificacao-prontuarios.md](docs/verificacao-prontuarios.md).
 
 Os testes de services são unitários e usam dublês nas portas. Testes HTTP usam servidores Express temporários em `127.0.0.1`, JWT real e os mesmos dublês, sem banco externo. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
 
@@ -181,27 +186,29 @@ O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por
 
 ## Endpoints implementados
 
-| Método | Rota                                      | Acesso             |
-| ------ | ----------------------------------------- | ------------------ |
-| GET    | `/api/v1/health`                          | Público            |
-| POST   | `/api/v1/auth/login`                      | Público            |
-| GET    | `/api/v1/users/me`                        | Autenticado        |
-| POST   | `/api/v1/users`                           | Admin              |
-| POST   | `/api/v1/patients`                        | Admin/secretary    |
-| GET    | `/api/v1/patients`                        | Autenticado        |
-| GET    | `/api/v1/patients/:id`                    | Autenticado        |
-| PATCH  | `/api/v1/patients/:id`                    | Admin/secretary    |
-| DELETE | `/api/v1/patients/:id`                    | Admin              |
-| POST   | `/api/v1/doctors`                         | Admin              |
-| GET    | `/api/v1/doctors`                         | Autenticado        |
-| GET    | `/api/v1/doctors/:id`                     | Autenticado        |
-| PUT    | `/api/v1/doctors/:doctorId/work-schedule` | Admin              |
-| GET    | `/api/v1/doctors/:doctorId/work-schedule` | Autenticado        |
-| GET    | `/api/v1/doctors/:doctorId/calendar`      | Autenticado        |
-| POST   | `/api/v1/appointments`                    | Admin/secretary    |
-| GET    | `/api/v1/appointments`                    | Autenticado        |
-| GET    | `/api/v1/appointments/:id`                | Autenticado        |
-| PATCH  | `/api/v1/appointments/:id/status`         | Conforme transição |
+| Método | Rota                                          | Acesso                      |
+| ------ | --------------------------------------------- | --------------------------- |
+| GET    | `/api/v1/health`                              | Público                     |
+| POST   | `/api/v1/auth/login`                          | Público                     |
+| GET    | `/api/v1/users/me`                            | Autenticado                 |
+| POST   | `/api/v1/users`                               | Admin                       |
+| POST   | `/api/v1/patients`                            | Admin/secretary             |
+| GET    | `/api/v1/patients`                            | Autenticado                 |
+| GET    | `/api/v1/patients/:id`                        | Autenticado                 |
+| PATCH  | `/api/v1/patients/:id`                        | Admin/secretary             |
+| DELETE | `/api/v1/patients/:id`                        | Admin                       |
+| POST   | `/api/v1/doctors`                             | Admin                       |
+| GET    | `/api/v1/doctors`                             | Autenticado                 |
+| GET    | `/api/v1/doctors/:id`                         | Autenticado                 |
+| PUT    | `/api/v1/doctors/:doctorId/work-schedule`     | Admin                       |
+| GET    | `/api/v1/doctors/:doctorId/work-schedule`     | Autenticado                 |
+| GET    | `/api/v1/doctors/:doctorId/calendar`          | Autenticado                 |
+| POST   | `/api/v1/appointments`                        | Admin/secretary             |
+| GET    | `/api/v1/appointments`                        | Autenticado                 |
+| GET    | `/api/v1/appointments/:id`                    | Autenticado                 |
+| PATCH  | `/api/v1/appointments/:id/status`             | Conforme transição          |
+| POST   | `/api/v1/patients/:patientId/medical-records` | Doctor com vínculo          |
+| GET    | `/api/v1/patients/:patientId/medical-records` | Doctor com vínculo ou admin |
 
 O cadastro público `/auth/register` foi removido. Não existe `/api/v1/auth/register`; a criação é interna por `POST /api/v1/users`, conforme RF13. As rotas antigas sem prefixo não são aliases.
 
@@ -496,6 +503,60 @@ Todos os filtros são opcionais. `from`/`to` são datas locais inclusivas em `YY
 Transição impossível retorna **422** `TRANSICAO_INVALIDA`; status inválido retorna **400** `DADOS_INVALIDOS`; falta de permissão retorna **403** `ACESSO_NEGADO`. Cancelar libera o horário para nova consulta.
 
 Verificação desta etapa: 342 testes, lint, formatação, typecheck e build aprovados. A concorrência também foi exercitada por HTTP contra PostgreSQL-compatível PGlite, incluindo duas requisições simultâneas; essa prova não substitui ainda a execução em PostgreSQL 16. Detalhes: [docs/verificacao-agendamentos.md](docs/verificacao-agendamentos.md).
+
+### Prontuários
+
+Um médico tem vínculo com o paciente se existir ao menos uma consulta entre eles com status `in_progress` ou `done`. Consultas `scheduled` e `cancelled` não concedem acesso. A leitura autorizada retorna o prontuário do paciente, inclusive registros escritos por outros médicos.
+
+| Perfil               | Escrever | Ler                 |
+| -------------------- | -------- | ------------------- |
+| `doctor` com vínculo | Sim      | Sim                 |
+| `doctor` sem vínculo | Não      | Não                 |
+| `admin`              | Não      | Sim, para auditoria |
+| `secretary`          | Não      | Não                 |
+
+Perfis são cumulativos: uma conta com `doctor` e `admin` precisa de vínculo para escrever como médico; para ler pode usar sua permissão administrativa. O perfil `admin` sozinho não concede escrita médica.
+
+`POST /api/v1/patients/:patientId/medical-records`, com token de médico com vínculo:
+
+```json
+{ "text": "Paciente relata dor lombar há duas semanas. Solicitado raio-X." }
+```
+
+Resposta **201**:
+
+```json
+{
+  "id": "84e621fe-9493-4bc9-86ce-2a4a6a62f8a4",
+  "patientId": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+  "doctorId": "338e7dbe-0f78-4d60-9de4-ab92a20de060",
+  "text": "Paciente relata dor lombar há duas semanas. Solicitado raio-X.",
+  "createdAt": "2026-10-19T15:25:00.000Z"
+}
+```
+
+`doctorId` é encontrado a partir do usuário autenticado, **nunca do corpo**. Se enviado, é ignorado, inclusive se tiver formato inválido. O `patientId` vem da rota. O texto é obrigatório e tem os espaços das extremidades removidos; texto vazio ou só com espaços retorna **400** `DADOS_INVALIDOS`.
+
+`GET /api/v1/patients/:patientId/medical-records?page=1&pageSize=20`, por médico com vínculo ou admin, responde **200**:
+
+```json
+{
+  "data": [
+    {
+      "id": "84e621fe-9493-4bc9-86ce-2a4a6a62f8a4",
+      "patientId": "20ba7288-1e53-4d79-8a38-4446c4840c28",
+      "doctorId": "338e7dbe-0f78-4d60-9de4-ab92a20de060",
+      "text": "Paciente relata dor lombar há duas semanas. Solicitado raio-X.",
+      "createdAt": "2026-10-19T15:25:00.000Z"
+    }
+  ],
+  "meta": { "total": 1, "page": 1, "pageSize": 20, "totalPages": 1 }
+}
+```
+
+A ordem é `createdAt` decrescente, com desempate por `id` decrescente. `page` tem padrão 1; `pageSize` tem padrão 20 e máximo 100. Não há registros: `data: []`, `total: 0` e `totalPages: 0`. A query não altera o paciente da rota nem o médico usado para autorizar a requisição.
+
+Sem token: **401** `NAO_AUTENTICADO`. Médico sem vínculo ou perfil sem permissão: **403** `ACESSO_NEGADO`. Paciente inexistente ou removido: **404** `RECURSO_NAO_ENCONTRADO` para perfis autorizados. UUID ou paginação inválidos: **400** `DADOS_INVALIDOS`. Datas são devolvidas em UTC, sem dados de login do autor.
 
 ### Erros
 

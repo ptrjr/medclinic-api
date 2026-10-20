@@ -22,6 +22,9 @@ import { admin } from './doubles';
 import { doctor } from './doctor-doubles';
 import { consultation, createPlanningDoubles, shift } from './planning-doubles';
 import { createAppointmentDoubles } from './appointment-doubles';
+import { MedicalRecordController } from '../src/controllers/medical-record.controller';
+import { MedicalRecordService } from '../src/services/medical-record.service';
+import { createMedicalRecordDoubles } from './medical-record-doubles';
 
 const f = createPlanningDoubles();
 const tokens = new JwtTokenProvider('segredo-ficticio-http-para-escalas-e-agenda', 3600);
@@ -47,6 +50,7 @@ async function call(
 }
 
 beforeAll(async () => {
+  const medical = createMedicalRecordDoubles();
   const app = createApp({
     authController: new AuthController(new AuthService(f.users, f.passwords, tokens)),
     userController: new UserController(new UserService(f.users, f.passwords)),
@@ -58,6 +62,9 @@ beforeAll(async () => {
     ),
     appointmentController: new AppointmentController(
       new AppointmentService(createAppointmentDoubles().appointments, f.doctors),
+    ),
+    medicalRecordController: new MedicalRecordController(
+      new MedicalRecordService(medical.records, medical.patients, medical.doctors),
     ),
     authenticate: createAuthMiddleware(tokens),
     logError: log,

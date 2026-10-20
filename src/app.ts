@@ -5,6 +5,7 @@ import type { PatientController } from './controllers/patient.controller';
 import type { DoctorController } from './controllers/doctor.controller';
 import type { DoctorPlanningController } from './controllers/doctor-planning.controller';
 import type { AppointmentController } from './controllers/appointment.controller';
+import type { MedicalRecordController } from './controllers/medical-record.controller';
 import { AppError } from './errors/app-error';
 import { createErrorMiddleware, type ErrorLogger } from './middlewares/error.middleware';
 import { createAuthRoutes } from './routes/auth.routes';
@@ -13,6 +14,7 @@ import { createPatientRoutes } from './routes/patient.routes';
 import { createDoctorRoutes } from './routes/doctor.routes';
 import { createDoctorPlanningRoutes } from './routes/doctor-planning.routes';
 import { createAppointmentRoutes } from './routes/appointment.routes';
+import { createMedicalRecordRoutes } from './routes/medical-record.routes';
 
 export interface AppDependencies {
   authController: AuthController;
@@ -21,6 +23,7 @@ export interface AppDependencies {
   doctorController: DoctorController;
   doctorPlanningController: DoctorPlanningController;
   appointmentController: AppointmentController;
+  medicalRecordController: MedicalRecordController;
   authenticate: RequestHandler;
   logError?: ErrorLogger;
 }
@@ -34,6 +37,10 @@ export function createApp(dependencies: AppDependencies): Express {
   app.use(
     '/api/v1/users',
     createUserRoutes(dependencies.userController, dependencies.authenticate),
+  );
+  app.use(
+    '/api/v1/patients',
+    createMedicalRecordRoutes(dependencies.medicalRecordController, dependencies.authenticate),
   );
   app.use(
     '/api/v1/patients',
