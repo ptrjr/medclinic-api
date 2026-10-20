@@ -68,3 +68,11 @@ export function calendarPeriod(from: string, to: string): CalendarPeriod {
     toExclusive: startOfLocalDay(new Date(last.getTime() + DAY_MS)),
   };
 }
+
+export function localDayBounds(value: string): CalendarPeriod {
+  const date = parseDate(value);
+  return {
+    fromInclusive: startOfLocalDay(date),
+    toExclusive: startOfLocalDay(new Date(date.getTime() + DAY_MS)),
+  };
+}

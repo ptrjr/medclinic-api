@@ -11,6 +11,9 @@ import { DoctorCalendarService } from './services/doctor-calendar.service';
 import { TypeOrmWorkScheduleRepository } from './repositories/typeorm-work-schedule.repository';
 import { TypeOrmCalendarAppointmentsRepository } from './repositories/typeorm-calendar-appointments.repository';
 import { AppointmentEntity } from './entities/appointment.entity';
+import { AppointmentController } from './controllers/appointment.controller';
+import { AppointmentService } from './services/appointment.service';
+import { TypeOrmAppointmentRepository } from './repositories/typeorm-appointment.repository';
 import { DoctorService } from './services/doctor.service';
 import { TypeOrmDoctorRepository } from './repositories/typeorm-doctor.repository';
 import { PatientEntity } from './entities/patient.entity';
@@ -33,6 +36,7 @@ export function composeApplication(dataSource: DataSource, config: AppEnvironmen
   const appointments = new TypeOrmCalendarAppointmentsRepository(
     dataSource.getRepository(AppointmentEntity),
   );
+  const appointmentRepository = new TypeOrmAppointmentRepository(dataSource);
   const tokens = new JwtTokenProvider(config.JWT_SECRET, config.JWT_EXPIRES_IN);
   const authService = new AuthService(users, passwords, tokens);
   const userService = new UserService(users, passwords);
@@ -44,6 +48,9 @@ export function composeApplication(dataSource: DataSource, config: AppEnvironmen
     doctorPlanningController: new DoctorPlanningController(
       new WorkScheduleService(doctors, schedules),
       new DoctorCalendarService(doctors, schedules, appointments),
+    ),
+    appointmentController: new AppointmentController(
+      new AppointmentService(appointmentRepository, doctors),
     ),
     authenticate: createAuthMiddleware(tokens),
   });
