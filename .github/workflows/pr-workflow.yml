@@ -23,3 +23,36 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run test:cov
+
+  integration:
+    name: integration (PostgreSQL 16)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: medclinic_integration_test
+          POSTGRES_USER: integration
+          POSTGRES_PASSWORD: integration-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U integration -d medclinic_integration_test"
+          --health-interval 1s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      INTEGRATION_DB_HOST: 127.0.0.1
+      INTEGRATION_DB_PORT: '5432'
+      INTEGRATION_DB_USERNAME: integration
+      INTEGRATION_DB_PASSWORD: integration-only-password
+      INTEGRATION_DB_DATABASE: medclinic_integration_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The service health check and a real connection precede the migrations.
+      - run: npm run test:integration

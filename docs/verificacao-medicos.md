@@ -34,6 +34,8 @@ Executada em PostgreSQL embarcado (PGlite) exposto por socket, com o DataSource 
 
 Limite: essa execução comprova o SQL e o rollback, mas não substitui a demonstração posterior em PostgreSQL 16 do Docker e no banco gerenciado da publicação.
 
+Atualização de 21/10/2026: a suíte reproduzível `npm run test:integration` foi executada em PostgreSQL 16.15 real no Docker, com cadastro/login, falha no INSERT após o usuário e disputa pela constraint de CRM. Coordenação, proteções e resultados em [testes de integração PostgreSQL 16](testes-integracao-postgresql.md). A execução histórica acima permanece identificada como PGlite.
+
 ## Demonstração local sugerida
 
 Rodar `npm run migration:run`, iniciar a API e autenticar como admin. Criar a médica com o corpo do README e conferir o login dela. Repetir o CRM com e-mail novo, observar `409 CRM_JA_CADASTRADO` e confirmar que esse e-mail não autentica (`401 CREDENCIAIS_INVALIDAS`). Consultar a lista com `pageSize=1&name=helena`; conferir `data` e `meta`.

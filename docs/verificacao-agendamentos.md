@@ -31,6 +31,8 @@ O bloqueio usa uma transação TypeORM, trava primeiro a linha do médico e depo
 
 ## Limites e próximos passos
 
+Atualização de 21/10/2026: a nova suíte `npm run test:integration` passou em PostgreSQL 16.15 real no Docker. Observa os PIDs bloqueados antes de liberar as disputas por médico e por paciente e confere respostas HTTP, persistência e intervalos encostados. Instruções e resultados em [testes de integração PostgreSQL 16](testes-integracao-postgresql.md). Os resultados PGlite acima são o registro histórico da etapa anterior.
+
 - Testes de service e regras usam dublês; não são prova de SQL.
 - O cenário de persistência e concorrência usa PGlite PostgreSQL-compatível, sem alegar que é PostgreSQL 16.
 - A migration que cria a tabela `appointments` já foi incorporada na etapa de Escalas e Agenda (PR #13); este módulo usa essa tabela e não adiciona outra migration.

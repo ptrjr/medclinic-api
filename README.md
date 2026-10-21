@@ -176,13 +176,21 @@ Para formatação e correções: `npm run format` e `npm run lint:fix`. Instale 
 
 A cobertura considera **apenas `src/**/*.service.ts` e `src/**/*.rules.ts`**, onde ficam as regras de negócio. Controllers, entidades, migrations, configuração e adaptadores ficam fora da conta. Novos services/rules entram automaticamente. O limiar mínimo é 80% em statements, branches, functions e lines; abaixo disso o comando falha.
 
-Na etapa atual, são **384 testes**, com **100% nas quatro métricas dos nove services e três arquivos de regras**. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, JWT, bcrypt, pacientes, médicos, escalas, agenda, criação e transições de agendamentos, prontuários e envelope central de erro.
+Na etapa atual, são **412 testes sem banco externo e seis testes de integração em PostgreSQL 16**, com **100% nas quatro métricas dos nove services e três arquivos de regras** na suíte unitária. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, proteção da configuração de integração, JWT, bcrypt, pacientes, médicos, escalas, agenda, criação e transições de agendamentos, prontuários e envelope central de erro.
 
 Os 42 testes novos de Prontuários estão em um único arquivo, `tests/medical-record.unit.test.ts`: usam dublês nas portas e não dependem de banco, rede ou variáveis de ambiente. Cobrem vínculo concedido/negado, autoria derivada do token, privilégios, paciente inexistente, DTOs e paginação. A verificação adicional da API com persistência está descrita em [docs/verificacao-prontuarios.md](docs/verificacao-prontuarios.md).
 
 Os testes de services são unitários e usam dublês nas portas. Testes HTTP usam servidores Express temporários em `127.0.0.1`, JWT real e os mesmos dublês, sem banco externo. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
 
 O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por servidor Express temporário em `127.0.0.1`, sem banco externo. Verificam acesso por perfil, corpo inválido, duplicidade, consulta, ausência de senha e envelope `data/meta`, incluindo query `pageSize`. Na etapa de Médicos a suíte tinha 129 testes; o service de Médicos alcança 100% nas quatro métricas. Evidências e limites da verificação de rollback: [docs/verificacao-medicos.md](docs/verificacao-medicos.md).
+
+### Integração transacional em PostgreSQL 16
+
+`npm run test:integration` executa seis cenários HTTP pela composição real da aplicação e pelos adaptadores TypeORM: cadastro/login de médico, rollback após falha no INSERT, corrida pelo UNIQUE de CRM, disputas por médico e por paciente e intervalos encostados. A suíte observa conexões independentes esperando por locks antes de liberar as disputas.
+
+Use o banco descartável do `compose.integration.yaml` e configure as cinco variáveis `INTEGRATION_DB_*`. O único nome aceito é `medclinic_integration_test`, e o host deve ser `127.0.0.1`, `::1` ou `localhost` (convertido em `127.0.0.1`, sem DNS). Hosts externos são recusados antes de qualquer conexão. A suíte não carrega `.env` e recria o schema `public` desse banco. Instruções bash/PowerShell, proteções e garantias: [testes de integração PostgreSQL 16](docs/testes-integracao-postgresql.md).
+
+O GitHub Actions mantém os checks atuais e acrescenta um job com serviço `postgres:16` e health check. Os testes unitários continuam sem banco externo, com o mesmo recorte de cobertura de services/rules. As verificações históricas em PGlite estão documentadas separadamente.
 
 ## Endpoints implementados
 
