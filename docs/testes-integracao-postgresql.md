@@ -44,8 +44,12 @@ Ao terminar, inclusive se o comando de testes falhar:
 docker compose -p medclinic-integration -f compose.integration.yaml down
 ```
 
-Também é possível usar uma instância PostgreSQL 16 própria, desde que o banco
+Também é possível usar uma instância PostgreSQL 16 local própria, desde que o banco
 **exclusivo e descartável** tenha exatamente o nome `medclinic_integration_test`.
+`INTEGRATION_DB_HOST` aceita somente `127.0.0.1`, `::1` ou `localhost`. O alias
+`localhost` é convertido em `127.0.0.1` antes de criar o DataSource, sem resolução
+DNS. Outros IPs, nomes de servidores, URLs e sockets Unix são recusados; não há
+opção para liberar hosts externos. Compose e GitHub Actions usam `127.0.0.1`.
 O usuário precisa criar/remover objetos no schema `public`, consultar a atividade
 das próprias conexões e executar as migrations. As credenciais acima são somente
 para o container de testes. O schema `public` desse banco é apagado no início e no
@@ -55,7 +59,11 @@ fim da suíte; não coloque dados a preservar nesse banco.
 
 - `tests/integration/config.ts` exige as cinco variáveis `INTEGRATION_DB_*`, sem
   carregar `.env`, importar o DataSource de produção ou herdar qualquer `DB_*`.
-  Nome ausente ou diferente é recusado antes de abrir conexão.
+  Nome ausente ou diferente e host fora da lista de loopback são recusados antes
+  de criar o DataSource ou abrir qualquer conexão. Essa restrição impede apontar
+  diretamente para outro servidor que também tenha um banco com o nome esperado.
+  Mantenha a porta local ligada ao banco descartável: a validação de host não
+  identifica um servidor remoto acessível por um túnel ou proxy local.
 - Depois de conectar, a suíte verifica `current_database()` e a versão do servidor
   antes de migrations ou alterações de schema. Somente PostgreSQL 16 é aceito.
   O DataSource usa a factory real, com `synchronize: false`.
@@ -76,7 +84,9 @@ fim da suíte; não coloque dados a preservar nesse banco.
   descarta o armazenamento do container.
 
 Os testes de proteção em `tests/integration-config.test.ts` executam sem banco na
-suíte normal e verificam nomes recusados e ausência de fallback para `DB_*`.
+suíte normal e verificam nomes recusados, ausência de fallback para `DB_*`, hosts
+locais aceitos, normalização de `localhost` sem DNS e rejeição de hosts externos
+mesmo com o nome correto do banco.
 
 ## Garantias e coordenação
 
@@ -154,3 +164,14 @@ Os comandos npm foram executados com `npm.cmd` no Windows. O Vitest precisou da
 execução fora do sandbox para criar subprocessos, após uma tentativa bloqueada
 com `spawn EPERM`. Não houve substituição por PGlite. O workflow foi preparado
 localmente; a execução no GitHub Actions depende de um futuro push/PR autorizado.
+
+### Revalidação da proteção de loopback em 21/10/2026
+
+A restrição de host acrescentou 18 casos sem banco (quatro entradas locais e 14
+hosts inválidos ou externos), mantendo os dez testes anteriores de configuração.
+`npm run test:cov` passou com **412 testes em 19 arquivos** e **100% nas quatro
+métricas** do mesmo recorte de services/rules. Lint, formatação, typecheck e build
+também passaram. `npm run test:integration` aprovou os mesmos **seis cenários** em
+PostgreSQL **16.15** real, com o container descartável acessado por
+`127.0.0.1:55433`. Compose e job do GitHub Actions já usam loopback e não precisaram
+de mudanças, assim como o harness e os cenários de integração.
