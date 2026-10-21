@@ -1,0 +1,16 @@
+services:
+  integration-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: medclinic_integration_test
+      POSTGRES_USER: integration
+      POSTGRES_PASSWORD: integration-only-password
+    ports:
+      - '127.0.0.1:${INTEGRATION_DB_PORT:-5433}:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U integration -d medclinic_integration_test']
+      interval: 1s
+      timeout: 5s
+      retries: 30

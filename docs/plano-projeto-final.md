@@ -15,15 +15,15 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 
 ## Entregas
 
-| Ordem | Entrega / issue                                                               | Branch sugerida               | Estado inicial              | Aceitação principal                                |
-| ----- | ----------------------------------------------------------------------------- | ----------------------------- | --------------------------- | -------------------------------------------------- |
-| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec`      | Concluído (PR #8)           | Nove correções; contrato de auth; testes e CI      |
-| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`               | Concluído (PR #12)          | CRUD, CPF único, busca e paginação                 |
-| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`                | Concluído (PR #11)          | Médico + usuário em uma transação; CRM único       |
-| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Concluído (PR #13)          | Turnos sem sobreposição; agenda por período        |
-| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/appointments`           | Concluído (PR #14)          | Validações, concorrência, posse e ciclo de status  |
-| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/medical-records`        | Implementado; aguardando PR | Escrita e leitura conforme vínculo médico-paciente |
-| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Backlog                     | Deploy automático, SSL, URL pública e entrega      |
+| Ordem | Entrega / issue                                                               | Branch sugerida               | Estado inicial     | Aceitação principal                                |
+| ----- | ----------------------------------------------------------------------------- | ----------------------------- | ------------------ | -------------------------------------------------- |
+| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec`      | Concluído (PR #8)  | Nove correções; contrato de auth; testes e CI      |
+| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`               | Concluído (PR #12) | CRUD, CPF único, busca e paginação                 |
+| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`                | Concluído (PR #11) | Médico + usuário em uma transação; CRM único       |
+| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Concluído (PR #13) | Turnos sem sobreposição; agenda por período        |
+| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/appointments`           | Concluído (PR #14) | Validações, concorrência, posse e ciclo de status  |
+| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/medical-records`        | Concluído (PR #15) | Escrita e leitura conforme vínculo médico-paciente |
+| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Backlog            | Deploy automático, SSL, URL pública e entrega      |
 
 As issues já têm descrições e critérios de aceitação. Criar um **GitHub Project público** e adicionar essas issues, com Backlog, A fazer, Em andamento, Em revisão e Concluído. Vincular cada PR ao card e mover o status durante o desenvolvimento. As ferramentas conectadas desta execução não oferecem criação de GitHub Projects ou configuração de proteção de branch; essas duas configurações ainda precisam ser feitas no GitHub.
 
@@ -56,7 +56,7 @@ Meta de versionamento: **20 commits reais e pelo menos 6 PRs incorporados com ch
 
 O recorte de cobertura inclui todos os arquivos `.service.ts` e `.rules.ts`, mesmo os novos ainda sem teste. Cada métrica precisa continuar em pelo menos 80%.
 
-A criação de agendamentos bloqueia médico e paciente e usa apenas o EntityManager transacional. O comportamento foi exercitado em PGlite por TCP; a validação final de concorrência em PostgreSQL 16 continua pendente. Mocks unitários não comprovam o bloqueio transacional. Antes da publicação, revisar também os cinco cenários mínimos de sobreposição em testes unitários.
+A criação de agendamentos bloqueia médico e paciente e usa apenas o EntityManager transacional. Além da verificação histórica em PGlite por TCP, a suíte de integração passou em PostgreSQL 16.15 real no Docker em 21/10/2026, observando contenção entre conexões independentes. Mocks unitários não comprovam o bloqueio transacional. Evidências e execução reproduzível: [testes de integração PostgreSQL 16](testes-integracao-postgresql.md). Antes da publicação, revisar também os cinco cenários mínimos de sobreposição em testes unitários.
 
 ## Divergências do enunciado
 
@@ -67,7 +67,7 @@ A criação de agendamentos bloqueia médico e paciente e usa apenas o EntityMan
 
 ## Antes da entrega no AVA
 
-Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários implementados sobre `806019f`, com vínculo por consultas `in_progress`/`done`, autoria pelo médico autenticado e acesso conforme RN14. A suíte registra 384 testes e 100% nas quatro métricas de services/rules; os 42 testes novos estão em um único arquivo unitário. Foram verificadas adicionalmente 63 respostas HTTP com persistência PGlite e a migration de prontuários. A validação final em PostgreSQL 16 e a publicação continuam pendentes. Evidências: [Agendamentos](verificacao-agendamentos.md) e [Prontuários](verificacao-prontuarios.md).
+Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários implementados sobre `806019f`, com vínculo por consultas `in_progress`/`done`, autoria pelo médico autenticado e acesso conforme RN14; incorporados pelo PR #15. Naquela etapa, a suíte registrava 384 testes e 100% nas quatro métricas de services/rules; os 42 testes novos estão em um único arquivo unitário. Foram verificadas adicionalmente 63 respostas HTTP com persistência PGlite e a migration de prontuários. Em 21/10/2026, os testes transacionais de médicos e agendamentos passaram em PostgreSQL 16.15 real, com 394 testes na suíte unitária e seis na integração. A publicação continua pendente. Evidências: [Agendamentos](verificacao-agendamentos.md), [Prontuários](verificacao-prontuarios.md) e [Integração PostgreSQL 16](testes-integracao-postgresql.md).
 
 - [ ] Todos os endpoints da seção 4.9 implementados e conferidos literalmente.
 - [ ] Casos mínimos e cobertura de pelo menos 80% nas quatro métricas.
