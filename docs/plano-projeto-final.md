@@ -15,15 +15,15 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 
 ## Entregas
 
-| Ordem | Entrega / issue                                                               | Branch sugerida               | Estado inicial     | Aceitação principal                                |
-| ----- | ----------------------------------------------------------------------------- | ----------------------------- | ------------------ | -------------------------------------------------- |
-| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec`      | Concluído (PR #8)  | Nove correções; contrato de auth; testes e CI      |
-| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`               | Concluído (PR #12) | CRUD, CPF único, busca e paginação                 |
-| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`                | Concluído (PR #11) | Médico + usuário em uma transação; CRM único       |
-| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Concluído (PR #13) | Turnos sem sobreposição; agenda por período        |
-| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/appointments`           | Concluído (PR #14) | Validações, concorrência, posse e ciclo de status  |
-| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/medical-records`        | Concluído (PR #15) | Escrita e leitura conforme vínculo médico-paciente |
-| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Backlog            | Deploy automático, SSL, URL pública e entrega      |
+| Ordem | Entrega / issue                                                               | Branch sugerida               | Estado inicial     | Aceitação principal                                  |
+| ----- | ----------------------------------------------------------------------------- | ----------------------------- | ------------------ | ---------------------------------------------------- |
+| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec`      | Concluído (PR #8)  | Nove correções; contrato de auth; testes e CI        |
+| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`               | Concluído (PR #12) | CRUD, CPF único, busca e paginação                   |
+| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`                | Concluído (PR #11) | Médico + usuário em uma transação; CRM único         |
+| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Concluído (PR #13) | Turnos sem sobreposição; agenda por período          |
+| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/appointments`           | Concluído (PR #14) | Validações, concorrência, posse e ciclo de status    |
+| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/medical-records`        | Concluído (PR #15) | Escrita e leitura conforme vínculo médico-paciente   |
+| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Em preparação      | Workflow pronto; falta configurar e comprovar deploy |
 
 As issues já têm descrições e critérios de aceitação. Criar um **GitHub Project público** e adicionar essas issues, com Backlog, A fazer, Em andamento, Em revisão e Concluído. Vincular cada PR ao card e mover o status durante o desenvolvimento. As ferramentas conectadas desta execução não oferecem criação de GitHub Projects ou configuração de proteção de branch; essas duas configurações ainda precisam ser feitas no GitHub.
 
@@ -74,7 +74,7 @@ Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários impl
 - [ ] PRs fechados com checks verdes e commits de conteúdo real.
 - [ ] Proteção da main ativa com PR obrigatório e check validate.
 - [ ] Board público com evolução real dos cards e link no README.
-- [ ] Workflow deploy.yml, imagem de produção e deploy automático após merge.
+- [ ] Workflow `deploy.yml`, imagem de produção e deploy automático após merge (workflow preparado; falta primeira execução configurada).
 - [ ] Banco gerenciado com SSL, migrations e seed.
 - [ ] URL pública disponível durante a correção, inclusive após inatividade.
 - [ ] Login do administrador de avaliação conferido.
