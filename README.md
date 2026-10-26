@@ -6,7 +6,7 @@ Esta é a evolução do mini-projeto de autenticação da Semana 07. A proposta 
 
 ## Estado do projeto
 
-**Etapa 6 do projeto final: base segura, pacientes, médicos, escalas, agenda, agendamentos, prontuários, migrations e CI.**
+**Etapa 7 do projeto final: base segura, módulos clínicos, migrations, CI e automação de publicação preparada.**
 
 Implementado nesta etapa:
 
@@ -29,7 +29,7 @@ Implementado nesta etapa:
 - Agendamento por `admin`/`secretary`, com duração calculada pela escala, bloqueios transacionais para médico e paciente, prevenção de conflitos e ciclo de status autorizado.
 - Prontuário com autoria pelo médico autenticado, leitura/escrita por vínculo de atendimento, leitura administrativa e paginação.
 
-Publicação e revisão final dos requisitos são as próximas entregas. **A API ainda não foi publicada.** O Dockerfile está preparado; a imagem e o deploy serão verificados na etapa de publicação.
+**A API ainda não foi publicada.** A automação de imagem e deploy está preparada, mas a URL pública, o banco gerenciado e as credenciais de avaliação só serão declarados após a primeira execução real em produção.
 
 O módulo de Pacientes foi ajustado ao contrato literal da seção 4.9.3. O corpo de cadastro contém apenas `name` e `cpf`; o PATCH altera apenas `name`. Campos adicionais da versão anterior permanecem preservados no banco, mas não integram a API pública.
 
@@ -585,6 +585,6 @@ Após o primeiro check verde, ative em **Settings → Branches → main**:
 
 O workflow não ativa proteção de branch sozinho. Sua ativação e o board público permanecem pendentes.
 
-A publicação automática será implementada em um PR próprio: imagem no registro, banco gerenciado com SSL, secrets no painel da plataforma e `deploy.yml` disparado por push na `main`. Nenhuma URL pública ou execução de deploy é declarada como concluída nesta etapa.
+`.github/workflows/deploy.yml` roda somente em push na `main`: publica a imagem multi-stage no GHCR e aciona o Render com o digest imutável publicado. A configuração do banco gerenciado, credenciais de registry, secrets e conferência da primeira publicação está detalhada em [publicação no Render](docs/publicacao-render.md). Nenhuma URL pública ou execução de deploy é declarada como concluída nesta etapa.
 
 Entrega prevista no enunciado: **02/11/2026 às 22h**. Consulte o [plano de entregas](docs/plano-projeto-final.md) antes de submeter ao AVA.
