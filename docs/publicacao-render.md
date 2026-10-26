@@ -5,10 +5,27 @@ O workflow [deploy.yml](../.github/workflows/deploy.yml) só executa quando há 
 `main`: publica uma imagem Linux `amd64` no GitHub Container Registry (GHCR) e pede ao
 Render que implante o **digest** daquela imagem. Pull requests não fazem deploy.
 
+O deploy só é acionado quando a variável **de repositório** `RENDER_DEPLOY_ENABLED`
+vale exatamente `true`. Sem essa ativação, somente a imagem é publicada, e o resumo
+do workflow informa que o deploy está desativado. Isso permite criar o serviço Render
+depois que sua imagem existe, sem depender de um hook ainda inexistente.
+
 Enquanto os recursos abaixo não forem configurados e a primeira execução não terminar
 com sucesso, a API não deve ser declarada como pública no README.
 
-## 1. Banco gerenciado
+## 1. Criar a primeira imagem no GHCR
+
+Mantenha `RENDER_DEPLOY_ENABLED` ausente ou com valor `false`. Após os checks do PR
+passarem, incluindo `docker build` sem publicação, incorpore o PR na `main`.
+O job `publish image` deve passar, e `deploy Render` deve aparecer como **skipped**.
+Esse resultado comprova a publicação da imagem, não um deploy da API.
+
+Abra o pacote `medclinic-api` no GitHub Packages e confirme que a imagem está
+disponível. O workflow autentica com `GITHUB_TOKEN` e permissão `packages: write`.
+Se a publicação falhar por permissão, resolva a configuração do pacote/repositório
+antes de prosseguir.
+
+## 2. Banco gerenciado
 
 No Render, crie PostgreSQL 16 na mesma região do futuro Web Service. Guarde as
 credenciais somente no painel do Render. Para atender à conexão com TLS, use os dados
@@ -44,7 +61,7 @@ issues, README ou Pull Requests. O container executa migrations e o seed idempot
 antes de iniciar o servidor; o seed não substitui a senha de um administrador já
 existente.
 
-## 2. Serviço a partir da imagem
+## 3. Serviço a partir da imagem existente
 
 Crie um **Web Service** no Render com a opção **Existing Image** e configure como imagem
 inicial:
@@ -53,9 +70,9 @@ inicial:
 ghcr.io/ptrjr/medclinic-api:latest
 ```
 
-O GHCR cria o pacote na primeira execução bem-sucedida do workflow. A opção preferida é
+O pacote já deve existir após a etapa 1. A opção preferida é
 manter o pacote privado: crie uma credencial de registry no Render com o usuário do
-GitHub e um personal access token **classic** limitado ao pacote, com permissão
+GitHub e um personal access token **classic** com permissão
 `read:packages`. Essa credencial fica somente no Render. Se o pacote for tornado
 público nas configurações do GitHub Packages, o Render pode buscá-lo sem credencial.
 
@@ -70,16 +87,26 @@ Depois do primeiro deploy, copie o **Deploy Hook** em _Settings_ do serviço. No
 adicione-o como o secret de repositório `RENDER_DEPLOY_HOOK_URL` em _Settings > Secrets
 and variables > Actions_. O hook é segredo: não o coloque em arquivos versionados.
 
-O job `deploy` falha intencionalmente se esse secret não existir. Assim, uma imagem pode
+## 4. Ativar e comprovar a automação
+
+Depois de configurar o secret, crie a variável **de repositório**
+`RENDER_DEPLOY_ENABLED` com valor `true`, em _Settings > Secrets and variables >
+Actions > Variables_. Ela não é um secret e deve estar no escopo do repositório,
+pois é consultada antes de iniciar o job associado ao environment `production`.
+
+Com a ativação, o job `deploy` falha intencionalmente se o secret não existir. Uma imagem pode
 ser publicada, mas o workflow jamais sinaliza um deploy de produção que não foi
 acionado. Ao receber o hook, ele envia `imgURL` com o digest publicado, evitando que o
 Render implante uma tag `latest` alterada por outra execução.
 
-## 3. Primeira execução e conferência
+Para conferir a automação sem alterar código, abra a primeira execução do workflow
+**Publish and deploy production**, na aba Actions, e selecione **Re-run all jobs**.
+A nova tentativa publica a imagem e avalia a variável atual para acionar o hook.
+Os próximos merges na `main` acionam esse fluxo automaticamente.
 
-Antes de incorporar este workflow na `main`, confirme que o repositório permite ao
-`GITHUB_TOKEN` gravar packages. Após o merge, o workflow **Publish and deploy
-production** deve terminar com os jobs `publish image` e `deploy Render` verdes.
+O sucesso do hook confirma que o Render aceitou a solicitação, não que o deploy
+terminou. Confira no painel Render o estado **Live** e o digest implantado, e então
+verifique saúde e login HTTP. Não declare publicação concluída apenas pelo job verde.
 
 Com a URL pública em mãos, execute:
 
@@ -103,11 +130,14 @@ o método de verificação e credenciais de avaliação entregues de forma priva
 | -------------------------------- | ------------------------------------------------------------------- |
 | Imagem multi-stage Linux `amd64` | `Dockerfile` e job `publish image`                                  |
 | Publicação após merge na `main`  | gatilho `push` de `deploy.yml`                                      |
-| Implantação da imagem publicada  | deploy hook Render com digest imutável                              |
+| Solicitação de implantação       | variável de ativação e deploy hook Render com digest imutável       |
 | Migrations e seed                | `docker/start.sh` no boot do container                              |
 | Banco gerenciado com TLS         | URL externa Render e `DB_SSL=true`                                  |
 | Segredos fora do Git             | Render Environment, GitHub Actions Secrets e credencial de registry |
 
 Os checks de qualidade e integração PostgreSQL 16 continuam no workflow de Pull
 Request. O workflow de produção não substitui esses checks; a proteção de branch deve
-exigir o job `validate` antes do merge.
+exigir `validate`, `integration (PostgreSQL 16)` e `docker build` antes do merge.
+
+Validação da imagem, conexão TLS no provedor e publicação pública só são comprovadas
+pelas execuções reais correspondentes. Este guia não as declara concluídas.

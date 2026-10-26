@@ -585,6 +585,6 @@ Após o primeiro check verde, ative em **Settings → Branches → main**:
 
 O workflow não ativa proteção de branch sozinho. Sua ativação e o board público permanecem pendentes.
 
-`.github/workflows/deploy.yml` roda somente em push na `main`: publica a imagem multi-stage no GHCR e aciona o Render com o digest imutável publicado. A configuração do banco gerenciado, credenciais de registry, secrets e conferência da primeira publicação está detalhada em [publicação no Render](docs/publicacao-render.md). Nenhuma URL pública ou execução de deploy é declarada como concluída nesta etapa.
+`.github/workflows/deploy.yml` roda somente em push na `main`: publica a imagem multi-stage no GHCR. Na primeira execução, o deploy fica desativado para permitir a criação do serviço a partir dessa imagem. Depois de configurar o Render, o secret do hook e a variável de repositório `RENDER_DEPLOY_ENABLED=true`, passa a acionar o Render com o digest imutável publicado. O workflow de PR também verifica o build Docker sem publicar imagens. A configuração e a conferência estão detalhadas em [publicação no Render](docs/publicacao-render.md). Nenhuma URL pública ou execução de deploy é declarada como concluída nesta etapa.
 
 Entrega prevista no enunciado: **02/11/2026 às 22h**. Consulte o [plano de entregas](docs/plano-projeto-final.md) antes de submeter ao AVA.
