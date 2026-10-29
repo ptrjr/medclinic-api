@@ -32,12 +32,12 @@ export function createBookingTransaction() {
     getWorkShifts: vi
       .fn<AppointmentBookingTransactionPort['getWorkShifts']>()
       .mockResolvedValue([shift]),
-    hasDoctorConflict: vi
-      .fn<AppointmentBookingTransactionPort['hasDoctorConflict']>()
-      .mockResolvedValue(false),
-    hasPatientConflict: vi
-      .fn<AppointmentBookingTransactionPort['hasPatientConflict']>()
-      .mockResolvedValue(false),
+    findDoctorConflictCandidates: vi
+      .fn<AppointmentBookingTransactionPort['findDoctorConflictCandidates']>()
+      .mockResolvedValue([]),
+    findPatientConflictCandidates: vi
+      .fn<AppointmentBookingTransactionPort['findPatientConflictCandidates']>()
+      .mockResolvedValue([]),
     create: vi.fn<AppointmentBookingTransactionPort['create']>().mockResolvedValue(appointment),
   } satisfies AppointmentBookingTransactionPort;
   return { transaction, exists };

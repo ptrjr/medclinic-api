@@ -23,6 +23,8 @@ export interface Appointment {
   createdAt: Date;
 }
 
+export type AppointmentPeriod = Pick<Appointment, 'startsAt' | 'endsAt'>;
+
 export interface AppointmentListQuery {
   doctorId?: string;
   patientId?: string;

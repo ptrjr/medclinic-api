@@ -12,7 +12,11 @@ import {
 import { AppError } from '../errors/app-error';
 import type { AppointmentRepositoryPort } from '../ports/appointment-repository.port';
 import type { DoctorRepositoryPort } from '../ports/doctor-repository.port';
-import { assertCanTransition, calculateAppointmentEnd } from '../rules/appointment-schedule.rules';
+import {
+  assertCanTransition,
+  calculateAppointmentEnd,
+  periodsOverlap,
+} from '../rules/appointment-schedule.rules';
 
 export class AppointmentService {
   constructor(
@@ -34,10 +38,13 @@ export class AppointmentService {
         }
         const shifts = await transaction.getWorkShifts();
         const endsAt = calculateAppointmentEnd(startsAt, shifts);
-        if (await transaction.hasDoctorConflict(startsAt, endsAt)) {
+        const period = { startsAt, endsAt };
+        const doctorCandidates = await transaction.findDoctorConflictCandidates(startsAt, endsAt);
+        if (doctorCandidates.some((candidate) => periodsOverlap(period, candidate))) {
           throw new AppError('HORARIO_INDISPONIVEL', 'Horário indisponível para o médico.');
         }
-        if (await transaction.hasPatientConflict(startsAt, endsAt)) {
+        const patientCandidates = await transaction.findPatientConflictCandidates(startsAt, endsAt);
+        if (patientCandidates.some((candidate) => periodsOverlap(period, candidate))) {
           throw new AppError('PACIENTE_INDISPONIVEL', 'Paciente indisponível nesse horário.');
         }
         return toAppointmentResponse(await transaction.create({ ...input, startsAt, endsAt }));

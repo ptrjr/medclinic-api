@@ -1,4 +1,4 @@
-import { AppointmentStatus } from '../domain/appointment';
+import { AppointmentStatus, type AppointmentPeriod } from '../domain/appointment';
 import { UserRole, type AuthPrincipal } from '../domain/user';
 import type { WorkShift } from '../domain/work-schedule';
 import { AppError } from '../errors/app-error';
@@ -16,6 +16,10 @@ const localDateTime = new Intl.DateTimeFormat('en-US-u-ca-gregory-nu-latn', {
   hourCycle: 'h23',
 });
 const weekdays: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+export function periodsOverlap(a: AppointmentPeriod, b: AppointmentPeriod): boolean {
+  return a.startsAt < b.endsAt && b.startsAt < a.endsAt;
+}
 
 function localParts(instant: Date) {
   const parts = localDateTime.formatToParts(instant);

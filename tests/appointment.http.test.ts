@@ -112,8 +112,8 @@ beforeEach(() => {
   repository.transaction.getWorkShifts.mockResolvedValue([
     { weekDay: 2, startTime: '08:00', endTime: '12:00', slotDurationMinutes: 30 },
   ]);
-  repository.transaction.hasDoctorConflict.mockResolvedValue(false);
-  repository.transaction.hasPatientConflict.mockResolvedValue(false);
+  repository.transaction.findDoctorConflictCandidates.mockResolvedValue([]);
+  repository.transaction.findPatientConflictCandidates.mockResolvedValue([]);
   repository.transaction.create.mockResolvedValue(appointment);
   repository.appointments.findById.mockResolvedValue(appointment);
   repository.appointments.list.mockResolvedValue({ items: [appointment], total: 1 });
@@ -166,9 +166,9 @@ describe('Contrato HTTP de agendamentos', () => {
     if (scenario === 'missing') repository.exists.doctor = false;
     if (scenario === 'outside') repository.transaction.getWorkShifts.mockResolvedValue([]);
     if (scenario === 'doctor-conflict')
-      repository.transaction.hasDoctorConflict.mockResolvedValue(true);
+      repository.transaction.findDoctorConflictCandidates.mockResolvedValue([appointment]);
     if (scenario === 'patient-conflict')
-      repository.transaction.hasPatientConflict.mockResolvedValue(true);
+      repository.transaction.findPatientConflictCandidates.mockResolvedValue([appointment]);
     expect(await call('', { method: 'POST', body: createAppointmentInput })).toMatchObject({
       status,
       body: { statusCode: status, error: code },
