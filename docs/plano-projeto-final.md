@@ -25,9 +25,25 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 | 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/medical-records`        | Concluído (PR #15) | Escrita e leitura conforme vínculo médico-paciente   |
 | 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Em preparação      | Workflow pronto; falta configurar e comprovar deploy |
 
-As issues já têm descrições e critérios de aceitação. Criar um **GitHub Project público** e adicionar essas issues, com Backlog, A fazer, Em andamento, Em revisão e Concluído. Vincular cada PR ao card e mover o status durante o desenvolvimento. As ferramentas conectadas desta execução não oferecem criação de GitHub Projects ou configuração de proteção de branch; essas duas configurações ainda precisam ser feitas no GitHub.
+O [Project público MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1) foi criado e vinculado a `ptrjr/medclinic-api` em **28/10/2026**, após confirmar a ausência de Project existente na conta. A visualização **Board** tem colunas pelo campo `Status`: Backlog, A fazer, Em andamento, Em revisão e Concluído. As sete issues existentes foram adicionadas sem duplicação; o campo `PRs e evidências` associa os PRs relevantes e os limites de cada entrega.
+
+A organização inicial foi realizada agora, com base em implementação, estado das issues e PRs incorporados; não foram inventadas movimentações ou datas históricas do board. Issues #1–#6 estão em **Concluído**, com evidências nos PRs #8–#16 e na correção de agendamentos do #18, conforme cada card. A issue #7 permanece **Em andamento**: o PR #17 prepara a automação, mas publicação e demais evidências de entrega ainda estão pendentes. Dois cards de rascunho, somente no Project, explicitam **Validação funcional completa da API** em **A fazer** e **Conferência pública da API publicada** em **Backlog**, dependente da publicação. Os estados Em revisão e as futuras movimentações serão usados quando houver trabalho real nessas condições.
 
 Requisito do documento fornecido: **20 commits reais e 6 PRs**. A entrega deve comprovar PRs incorporados com checks verdes. Os commits devem acompanhar mudanças reais; não criar commits vazios para preencher contagem. Essa quantidade não é uma divergência pendente de confirmação.
+
+## Proteção da main — verificação de 28/10/2026
+
+O PR [#18](https://github.com/ptrjr/medclinic-api/pull/18) foi confirmado como incorporado no commit `825360694317d5b6a9ec3106067aafb1bad4ea00`. A `main` local foi atualizada por fast-forward e a documentação desta etapa está na branch `docs/etapa-2-organizacao-github`, baseada nesse commit.
+
+A inspeção inicial pela API retornou `Branch not protected` e nenhuma regra de ruleset aplicável. Foi criada uma única proteção clássica para `main` e a configuração foi relida após salvar:
+
+- PR obrigatório, com `required_approving_review_count: 0`, sem exigir aprovação de outro revisor ou do próprio autor.
+- Checks obrigatórios `validate`, `docker build` e `integration (PostgreSQL 16)`, com `strict: true` para exigir branch atualizada antes do merge.
+- Os três checks foram confirmados no workflow `Validate pull request` do PR #18, com resultado aprovado na [execução de CI](https://github.com/ptrjr/medclinic-api/actions/runs/40795507858), e vinculados ao GitHub Actions (`app_id: 15368`).
+- Aplicação ao administrador (`enforce_admins: true`), sem bypass configurado; force push e exclusão da `main` bloqueados.
+- Sem merge queue, histórico linear obrigatório, aprovação de code owner ou aprovação do último push.
+
+A autenticação do GitHub CLI confirmou a conta `ptrjr`, permissão `ADMIN` no repositório e escopo `project`. A proteção e o Project foram configurados por APIs oficiais, sem alterar secrets, variáveis de publicação ou outros repositórios. A criação do board e a proteção não comprovam publicação ou validação pública da API. Esta atualização de documentação segue em PR próprio para a `main`; sua incorporação não substitui essas validações.
 
 ## Rastreabilidade da avaliação anterior
 
@@ -74,8 +90,11 @@ Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários impl
 - [ ] Todos os endpoints da seção 4.9 implementados e conferidos literalmente.
 - [ ] Casos mínimos e cobertura de pelo menos 80% nas quatro métricas.
 - [ ] PRs fechados com checks verdes e commits de conteúdo real.
-- [ ] Proteção da main ativa com PR obrigatório e check validate.
-- [ ] Board público com evolução real dos cards e link no README.
+- [x] Proteção da main ativa com PR obrigatório, três checks do GitHub Actions, branch atualizada, aplicação ao admin e bloqueio de force push/exclusão.
+- [x] Project público vinculado ao repositório, visualização Board com os cinco estados, cards organizados por evidências e link incluído no README local.
+- [ ] Registrar as próximas movimentações reais do board durante o trabalho, sem reconstruir histórico.
+- [ ] Executar a validação funcional completa da API e registrar resultados efetivos.
+- [ ] Fazer a conferência pública após publicação, incluindo disponibilidade e credenciais de avaliação.
 - [ ] Workflow `deploy.yml`, imagem de produção e deploy automático após merge (workflow preparado; falta primeira execução configurada).
 - [ ] Banco gerenciado com SSL, migrations e seed.
 - [ ] URL pública disponível durante a correção, inclusive após inatividade.
