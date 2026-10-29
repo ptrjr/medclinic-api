@@ -125,9 +125,9 @@ describe('Médicos: HTTP, composição real e transações PostgreSQL 16', () =>
   it('reverte o usuário quando o INSERT do médico falha depois do INSERT do usuário', async () => {
     const input = doctorInput();
     await withDoctorTrigger('fail', async () => {
-      expect(await harness.request('/doctors', input)).toMatchObject({
+      expect(await harness.request('/doctors', input)).toEqual({
         status: 500,
-        body: { statusCode: 500, error: 'ERRO_INTERNO' },
+        body: { statusCode: 500, error: 'ERRO_INTERNO', message: 'Erro interno do servidor.' },
       });
       await expectUserInserts(1);
       expect(await harness.source.getRepository(UserEntity).countBy({ email: input.email })).toBe(
