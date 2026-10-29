@@ -34,7 +34,7 @@ Implementado nesta etapa:
 O módulo de Pacientes foi ajustado ao contrato literal da seção 4.9.3. O corpo de cadastro contém apenas `name` e `cpf`; o PATCH altera apenas `name`. Campos adicionais da versão anterior permanecem preservados no banco, mas não integram a API pública.
 
 Backlog: [issues do projeto](https://github.com/ptrjr/medclinic-api/issues). Plano detalhado: [docs/plano-projeto-final.md](docs/plano-projeto-final.md).
-Board público: [MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1), vinculado a este repositório. A visualização **Board** usa os estados Backlog, A fazer, Em andamento, Em revisão e Concluído. A organização inicial foi feita em **28/10/2026**, com base nas issues e nos PRs incorporados; não representa movimentações históricas do board. Publicação, validação funcional completa e conferência pública continuam pendentes.
+Board público: [MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1), vinculado a este repositório. A visualização **Board** usa os estados Backlog, A fazer, Em andamento, Em revisão e Concluído. A organização inicial foi feita em **28/10/2026**, com base nas issues e nos PRs incorporados; não representa movimentações históricas do board. A validação funcional **local** foi executada em 29/10/2026 e está em revisão, com [matriz e evidências](docs/verificacao-funcional-completa.md). Publicação e conferência pública continuam pendentes.
 
 ## Tecnologias
 
@@ -185,6 +185,12 @@ Os 42 testes novos de Prontuários estão em um único arquivo, `tests/medical-r
 Os testes de services são unitários e usam dublês nas portas. Testes HTTP usam servidores Express temporários em `127.0.0.1`, JWT real e os mesmos dublês, sem banco externo. Testes de adaptadores usam segredos e senhas fictícios passados diretamente.
 
 O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por servidor Express temporário em `127.0.0.1`, sem banco externo. Verificam acesso por perfil, corpo inválido, duplicidade, consulta, ausência de senha e envelope `data/meta`, incluindo query `pageSize`. Na etapa de Médicos a suíte tinha 129 testes; o service de Médicos alcança 100% nas quatro métricas. Evidências e limites da verificação de rollback: [docs/verificacao-medicos.md](docs/verificacao-medicos.md).
+
+### Validação funcional local
+
+`npm run test:functional`, após `npm run build`, executa a matriz funcional completa local contra PostgreSQL 16 real, com o mesmo banco exclusivo e as proteções de destino da integração. Usa migrations, seed e servidor compilados, HTTP real e dados fictícios, sem ler ou sobrescrever `.env`. O comando é separado de `npm test`/`test:cov` e reescreve `docs/verificacao-funcional-completa.md` com os resultados observados. A execução de 29/10/2026 aprovou 509 verificações (437 HTTP e 72 bootstrap/SQL; 142 de preparação), incluindo as 64 combinações de estado, destino e autoridade nas transições. Ambiente, reprodução, limites e matriz: [verificação funcional completa](docs/verificacao-funcional-completa.md). Isso não representa execução da bateria privada do professor ou conferência pública.
+
+O executor recusa um schema `public` já preenchido antes de remover dados. Use um Compose exclusivo, sem recursos pré-existentes, conforme os comandos do relatório. Ao terminar ou falhar, o executor encerra o servidor e libera as conexões/lock; a remoção do container fica a cargo do procedimento de reprodução, depois de conferir a propriedade dos recursos.
 
 ### Integração transacional em PostgreSQL 16
 

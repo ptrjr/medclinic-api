@@ -45,6 +45,20 @@ A inspeção inicial pela API retornou `Branch not protected` e nenhuma regra de
 
 A autenticação do GitHub CLI confirmou a conta `ptrjr`, permissão `ADMIN` no repositório e escopo `project`. A proteção e o Project foram configurados por APIs oficiais, sem alterar secrets, variáveis de publicação ou outros repositórios. A criação do board e a proteção não comprovam publicação ou validação pública da API. Esta atualização de documentação segue em PR próprio para a `main`; sua incorporação não substitui essas validações.
 
+## Validação funcional local — 29/10/2026
+
+O PR [#19](https://github.com/ptrjr/medclinic-api/pull/19) foi incorporado por merge commit em `3258c55efae62c9ae4f9afac8a9f523327e5dedb`, depois de confirmar o head esperado e os três checks aprovados, sem bypass. A `main` foi atualizada por fast-forward e a ETAPA 3 está na branch `test/validacao-funcional-completa`, preparada para revisão e versionamento em PR próprio.
+
+Foi consultado o [enunciado atual em `7fa5d59e0de3a637a3161a4373b5fcbb92a88b9d`](https://github.com/marcomoura-senai/nestjs-clinica/blob/7fa5d59e0de3a637a3161a4373b5fcbb92a88b9d/README.md). Essa referência ainda diverge internamente entre a seção detalhada 4.9.5 (somente admin altera escala) e o resumo 4.9.9 (inclui doctor), e entre 4.7 (10/3) e a rubrica (20/6). Isso não altera as decisões explícitas anteriores: somente admin altera escala e a meta de entrega continua em 20 commits reais e 6 PRs. As divergências foram registradas antes dos testes; o comportamento da API foi preservado.
+
+A matriz própria executou **509 verificações aprovadas**, com **437 requisições HTTP reais** e **72 verificações de bootstrap/SQL**; 142 linhas são preparação por HTTP, separadas dos 367 demais casos. Abrange todas as rotas do contrato, controles de acesso, as 64 combinações de transição de status, vínculos de prontuário, persistência e limites de dia/fuso. O PostgreSQL era **16.15 real**, em Compose exclusivo com `tmpfs`, migrations e `synchronize: false`. O servidor normal compilado e o seed foram exercitados; repetir o seed preservou o administrador. Na repetição após a revisão pré-versionamento, a maior latência observada aquecida foi **300,95 ms**, com zero respostas acima de 5 segundos, sem garantia universal de desempenho.
+
+A suíte transacional existente também aprovou **8 testes**, incluindo rollback e contenção observada entre conexões independentes. A suíte sem banco aprovou **432 testes**, com **100% nas quatro métricas** do recorte original de services/rules. Não foi comprovado defeito da aplicação: houve uma premissa incorreta no executor intermediário, corrigida conforme o formato da agenda, seguida de nova execução completa. O ambiente descartável foi limpo e removido.
+
+Relatório, comandos, matriz de cada caso e limitações: [verificação funcional completa](verificacao-funcional-completa.md). O card da validação segue para **Em revisão**, com as mudanças locais prontas para revisão; não foi marcado Concluído. Não houve execução da bateria privada do professor, nem conferência pública. O merge do #19 acionou a [publicação da imagem](https://github.com/ptrjr/medclinic-api/actions/runs/40905014779); o job `deploy Render` foi ignorado (`skipped`), sem alterar variáveis ou secrets. Publicação da API, banco gerenciado com SSL, URL pública e credenciais de avaliação continuam pendentes.
+
+A revisão pré-versionamento reforçou somente o executor: recusa de schema preenchido antes de limpar e encerramento do servidor com timeout e fallback. Dois ensaios negativos controlados comprovaram preservação de uma tabela sentinela e limpeza após falha de bootstrap; ambos liberaram conexões e advisory lock. A matriz inteira foi então repetida, mantendo os **509 resultados aprovados**. Os ensaios de segurança são registrados separadamente, sem inflar essa contagem.
+
 ## Rastreabilidade da avaliação anterior
 
 | Ponto | Correção nesta etapa                                                            | Onde                                       |
@@ -88,12 +102,12 @@ Além da verificação histórica em PGlite por TCP, a suíte de integração pa
 Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários implementados sobre `806019f`, com vínculo por consultas `in_progress`/`done`, autoria pelo médico autenticado e acesso conforme RN14; incorporados pelo PR #15. Naquela etapa, a suíte registrava 384 testes e 100% nas quatro métricas de services/rules; os 42 testes novos estão em um único arquivo unitário. Foram verificadas adicionalmente 63 respostas HTTP com persistência PGlite e a migration de prontuários. Em 21/10/2026, os testes transacionais de médicos e agendamentos passaram em PostgreSQL 16.15 real, com 394 testes na suíte unitária e seis na integração. A publicação continua pendente. Evidências: [Agendamentos](verificacao-agendamentos.md), [Prontuários](verificacao-prontuarios.md) e [Integração PostgreSQL 16](testes-integracao-postgresql.md).
 
 - [ ] Todos os endpoints da seção 4.9 implementados e conferidos literalmente.
-- [ ] Casos mínimos e cobertura de pelo menos 80% nas quatro métricas.
+- [x] Casos mínimos e cobertura de pelo menos 80% nas quatro métricas, reconferidos localmente em 29/10/2026: 432 testes e 100% em services/rules.
 - [ ] PRs fechados com checks verdes e commits de conteúdo real.
 - [x] Proteção da main ativa com PR obrigatório, três checks do GitHub Actions, branch atualizada, aplicação ao admin e bloqueio de force push/exclusão.
 - [x] Project público vinculado ao repositório, visualização Board com os cinco estados, cards organizados por evidências e link incluído no README local.
 - [ ] Registrar as próximas movimentações reais do board durante o trabalho, sem reconstruir histórico.
-- [ ] Executar a validação funcional completa da API e registrar resultados efetivos.
+- [x] Executar e registrar a validação funcional completa local: 509 verificações aprovadas em PostgreSQL 16.15, com evidências em revisão.
 - [ ] Fazer a conferência pública após publicação, incluindo disponibilidade e credenciais de avaliação.
 - [ ] Workflow `deploy.yml`, imagem de produção e deploy automático após merge (workflow preparado; falta primeira execução configurada).
 - [ ] Banco gerenciado com SSL, migrations e seed.
