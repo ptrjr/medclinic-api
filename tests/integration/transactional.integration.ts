@@ -3,6 +3,7 @@ import type { DoctorResponse } from '../../src/dtos/doctor.dto';
 import { UserEntity } from '../../src/entities/user.entity';
 import { DoctorEntity } from '../../src/entities/doctor.entity';
 import { AppointmentEntity } from '../../src/entities/appointment.entity';
+import { AppointmentStatus } from '../../src/domain/appointment';
 import { IntegrationHarness, password } from './harness';
 
 let harness: IntegrationHarness;
@@ -172,6 +173,58 @@ describe('Médicos: HTTP, composição real e transações PostgreSQL 16', () =>
 });
 
 describe('Agendamentos: contenção observada entre conexões independentes', () => {
+  it.each([
+    ['médico', 'HORARIO_INDISPONIVEL'],
+    ['paciente', 'PACIENTE_INDISPONIVEL'],
+  ] as const)('seleciona períodos e exclui cancelled para %s', async (owner, errorCode) => {
+    const doctor = await createDoctor();
+    const otherDoctor = await createDoctor();
+    const patientId = await createPatient();
+    const otherPatientId = await createPatient();
+    await schedule(doctor.id);
+    const repository = harness.source.getRepository(AppointmentEntity);
+
+    for (const [start, end, status, conflicts] of [
+      ['10:00', '10:30', AppointmentStatus.SCHEDULED, false],
+      ['12:00', '12:30', AppointmentStatus.SCHEDULED, false],
+      ['10:30', '11:00', AppointmentStatus.SCHEDULED, false],
+      ['11:30', '12:00', AppointmentStatus.SCHEDULED, false],
+      ['11:10', '11:20', AppointmentStatus.DONE, true],
+      ['10:30', '12:00', AppointmentStatus.IN_PROGRESS, true],
+      ['10:45', '11:15', AppointmentStatus.SCHEDULED, true],
+      ['11:15', '11:45', AppointmentStatus.SCHEDULED, true],
+      ['11:00', '11:30', AppointmentStatus.SCHEDULED, true],
+      ['11:00', '11:30', AppointmentStatus.CANCELLED, false],
+    ] as const) {
+      await repository.save([
+        repository.create({
+          doctorId: owner === 'médico' ? doctor.id : otherDoctor.id,
+          patientId: owner === 'paciente' ? patientId : otherPatientId,
+          startsAt: new Date(`2026-10-20T${start}:00Z`),
+          endsAt: new Date(`2026-10-20T${end}:00Z`),
+          status,
+        }),
+        // Same time, unrelated owners: must never block this booking.
+        repository.create({
+          doctorId: otherDoctor.id,
+          patientId: otherPatientId,
+          startsAt: new Date(startsAt),
+          endsAt: new Date('2026-10-20T11:30:00Z'),
+          status: AppointmentStatus.SCHEDULED,
+        }),
+      ]);
+      const result = await harness.request('/appointments', {
+        doctorId: doctor.id,
+        patientId,
+        startsAt,
+      });
+      expect(result.status, `${owner}: ${start}–${end}, ${status}`).toBe(conflicts ? 409 : 201);
+      if (conflicts) expect(result.body).toMatchObject({ statusCode: 409, error: errorCode });
+      expect(await repository.count()).toBe(conflicts ? 2 : 3);
+      await repository.createQueryBuilder().delete().execute();
+    }
+  });
+
   it('permite somente uma consulta concorrente para o mesmo médico e horário', async () => {
     const doctor = await createDoctor();
     const patients = [await createPatient(), await createPatient()];

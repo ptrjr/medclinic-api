@@ -2,6 +2,44 @@
 
 Base da implementação: `origin/main` em `7c8359950572339257409e2eec4cff83955ab9c3` (PR #15).
 
+## Revalidação da sobreposição — 28/10/2026
+
+Branch `fix/etapa-1-sobreposicao-agendamentos`, baseada na `main` local em
+`1eb496be39370d2f2a84334dc556093011ca82cd`. A porta transacional passou de
+booleanos para períodos candidatos, e o service aplica a regra de interseção de
+produção antes de gravar. Os filtros SQL parametrizados, a exclusão de canceladas,
+os bloqueios e o uso do mesmo EntityManager foram preservados.
+
+Foram acrescentados dois testes de matriz (médico/paciente), cada um com dez
+combinações de período/status, verificando bordas, contenção, cruzamento,
+igualdade, outros titulares e exclusão de `cancelled`. As consultas existentes
+são preparadas diretamente no banco descartável; a tentativa de agendamento
+passa pelo HTTP e pela composição real. A contagem persistida comprova que os
+conflitos não gravam novas consultas. Permanecem os seis testes anteriores,
+incluindo contenção observada entre conexões independentes.
+
+- O Docker Desktop estava parado; foi iniciado para esta validação.
+- `docker compose -p medclinic-integration -f compose.integration.yaml up -d --wait`:
+  aprovado, com `INTEGRATION_DB_PORT=55433` em loopback e dados em `tmpfs`.
+- `SELECT version(), current_database()`: **PostgreSQL 16.15**, Linux x86_64,
+  banco **medclinic_integration_test**.
+- `npm run test:integration`: **8 testes aprovados em 1 arquivo**.
+- `npm run test:cov`: **432 testes aprovados em 19 arquivos**, com **100%** em
+  statements (247/247), branches (146/146), functions (61/61) e lines (233/233).
+- `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run build` e
+  `git diff --check`: aprovados.
+- Após a suíte, consulta externa confirmou **zero tabelas**, **zero funções** no
+  schema `public` e **zero conexões** com o prefixo `medclinic-integration-`.
+- `docker compose -p medclinic-integration -f compose.integration.yaml down`:
+  container e rede removidos, descartando os dados em `tmpfs`.
+
+Os comandos npm foram executados com `npm.cmd` no Windows. O Vitest foi executado
+fora do sandbox após `spawn EPERM` na primeira tentativa de cobertura. O acesso
+ao daemon Docker também exigiu execução fora do sandbox. Todas as proteções de
+versão, banco descartável, loopback e advisory lock permaneceram ativas. Não
+houve substituição por PGlite, validação pública da API ou execução remota de
+testes nesta revisão.
+
 ## Executar localmente
 
 Requisitos: Node.js nas versões aceitas pelo projeto, `npm ci` e Docker com Compose.
@@ -90,14 +128,15 @@ mesmo com o nome correto do banco.
 
 ## Garantias e coordenação
 
-| Cenário                            | Evidência verificada                                                                                                                                                                     |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cadastro de médico                 | HTTP 201, usuário com perfil doctor, hash persistido, ausência de senha na resposta e login HTTP 200 com as credenciais fornecidas.                                                      |
-| Falha no INSERT de médico          | Trigger vê o usuário dentro da transação, registra a passagem e lança exceção. HTTP 500, nenhum médico ou usuário órfão e login 401.                                                     |
-| Corrida pelo mesmo CRM             | Ambas as transações chegam ao INSERT de médico depois do pré-check. A constraint `doctors_crm_unique` produz um 201 e um 409 `CRM_JA_CADASTRADO`; só o vencedor e seu usuário persistem. |
-| Mesmo médico e horário             | Duas conexões HTTP bloqueadas na linha do médico antes da liberação; um 201, um 409 `HORARIO_INDISPONIVEL` e exatamente uma consulta persistida.                                         |
-| Mesmo paciente, médicos diferentes | Duas conexões HTTP bloqueadas na linha do paciente antes da liberação; um 201, um 409 `PACIENTE_INDISPONIVEL` e exatamente uma consulta persistida.                                      |
-| Intervalos encostados              | Mesmo médico e paciente recebem duas consultas 201; o fim da primeira é igual ao início da segunda no banco.                                                                             |
+| Cenário                            | Evidência verificada                                                                                                                                                                                |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cadastro de médico                 | HTTP 201, usuário com perfil doctor, hash persistido, ausência de senha na resposta e login HTTP 200 com as credenciais fornecidas.                                                                 |
+| Falha no INSERT de médico          | Trigger vê o usuário dentro da transação, registra a passagem e lança exceção. HTTP 500, nenhum médico ou usuário órfão e login 401.                                                                |
+| Corrida pelo mesmo CRM             | Ambas as transações chegam ao INSERT de médico depois do pré-check. A constraint `doctors_crm_unique` produz um 201 e um 409 `CRM_JA_CADASTRADO`; só o vencedor e seu usuário persistem.            |
+| Mesmo médico e horário             | Duas conexões HTTP bloqueadas na linha do médico antes da liberação; um 201, um 409 `HORARIO_INDISPONIVEL` e exatamente uma consulta persistida.                                                    |
+| Mesmo paciente, médicos diferentes | Duas conexões HTTP bloqueadas na linha do paciente antes da liberação; um 201, um 409 `PACIENTE_INDISPONIVEL` e exatamente uma consulta persistida.                                                 |
+| Intervalos encostados              | Mesmo médico e paciente recebem duas consultas 201; o fim da primeira é igual ao início da segunda no banco.                                                                                        |
+| Matriz de períodos por titular     | Para médico e paciente, períodos antes/depois, encostados, contidos, cruzados e iguais; ocupação scheduled/in_progress/done, exclusão de cancelled e de outros titulares, sem inserção em conflito. |
 
 Nos agendamentos, uma conexão de controle independente abre transação e bloqueia a
 linha disputada com `SELECT ... FOR UPDATE`. Duas requisições HTTP são iniciadas;

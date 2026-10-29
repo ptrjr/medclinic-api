@@ -2,6 +2,7 @@ import type {
   Appointment,
   AppointmentListQuery,
   AppointmentPage,
+  AppointmentPeriod,
   AppointmentStatus,
   NewAppointment,
 } from '../domain/appointment';
@@ -11,8 +12,9 @@ export interface AppointmentBookingTransactionPort {
   doctorExists: boolean;
   patientExists: boolean;
   getWorkShifts(): Promise<WorkShift[]>;
-  hasDoctorConflict(startsAt: Date, endsAt: Date): Promise<boolean>;
-  hasPatientConflict(startsAt: Date, endsAt: Date): Promise<boolean>;
+  // Non-cancelled periods preselected by owner and requested time window.
+  findDoctorConflictCandidates(startsAt: Date, endsAt: Date): Promise<AppointmentPeriod[]>;
+  findPatientConflictCandidates(startsAt: Date, endsAt: Date): Promise<AppointmentPeriod[]>;
   create(input: NewAppointment): Promise<Appointment>;
 }
 

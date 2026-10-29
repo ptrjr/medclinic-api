@@ -176,7 +176,9 @@ Para formatação e correções: `npm run format` e `npm run lint:fix`. Instale 
 
 A cobertura considera **apenas `src/**/*.service.ts` e `src/**/*.rules.ts`**, onde ficam as regras de negócio. Controllers, entidades, migrations, configuração e adaptadores ficam fora da conta. Novos services/rules entram automaticamente. O limiar mínimo é 80% em statements, branches, functions e lines; abaixo disso o comando falha.
 
-Na etapa atual, são **412 testes sem banco externo e seis testes de integração em PostgreSQL 16**, com **100% nas quatro métricas dos nove services e três arquivos de regras** na suíte unitária. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, proteção da configuração de integração, JWT, bcrypt, pacientes, médicos, escalas, agenda, criação e transições de agendamentos, prontuários e envelope central de erro.
+Na revisão de 28/10/2026, `test:cov` aprovou **432 testes sem banco externo**, com **100% nas quatro métricas dos nove services e três arquivos de regras**. A suíte inclui login com comparação de hash, criação administrativa, ausência de elevação pública, seed idempotente, validação de dados/ambiente, proteção da configuração de integração, JWT, bcrypt, pacientes, médicos, escalas, agenda, criação e transições de agendamentos, prontuários e envelope central de erro.
+
+Em `tests/appointment.unit.test.ts`, o service executa a regra de produção `periodsOverlap`: `a.startsAt < b.endsAt && b.startsAt < a.endsAt`. A matriz para médico e paciente cobre períodos antes/depois, encostados nas duas bordas, contenção nas duas direções, cruzamento de cada borda e igualdade. Os dublês fornecem períodos, sem decidir a interseção. Também são verificadas ausência de gravação em conflito e prioridade do conflito do médico.
 
 Os 42 testes novos de Prontuários estão em um único arquivo, `tests/medical-record.unit.test.ts`: usam dublês nas portas e não dependem de banco, rede ou variáveis de ambiente. Cobrem vínculo concedido/negado, autoria derivada do token, privilégios, paciente inexistente, DTOs e paginação. A verificação adicional da API com persistência está descrita em [docs/verificacao-prontuarios.md](docs/verificacao-prontuarios.md).
 
@@ -186,7 +188,7 @@ O módulo de Médicos acrescenta testes de service com dublês e testes HTTP por
 
 ### Integração transacional em PostgreSQL 16
 
-`npm run test:integration` executa seis cenários HTTP pela composição real da aplicação e pelos adaptadores TypeORM: cadastro/login de médico, rollback após falha no INSERT, corrida pelo UNIQUE de CRM, disputas por médico e por paciente e intervalos encostados. A suíte observa conexões independentes esperando por locks antes de liberar as disputas.
+`npm run test:integration` executa oito cenários pela composição real da aplicação e pelos adaptadores TypeORM: cadastro/login de médico, rollback após falha no INSERT, corrida pelo UNIQUE de CRM, disputas por médico e por paciente, intervalos encostados e duas matrizes de períodos (médico/paciente). As matrizes verificam filtros por titular, bordas, contenção, cruzamento, igualdade e exclusão de `cancelled`, com conferência da quantidade persistida. A suíte observa conexões independentes esperando por locks antes de liberar as disputas. Resultados e instruções em [testes de integração PostgreSQL 16](docs/testes-integracao-postgresql.md).
 
 Use o banco descartável do `compose.integration.yaml` e configure as cinco variáveis `INTEGRATION_DB_*`. O único nome aceito é `medclinic_integration_test`, e o host deve ser `127.0.0.1`, `::1` ou `localhost` (convertido em `127.0.0.1`, sem DNS). Hosts externos são recusados antes de qualquer conexão. A suíte não carrega `.env` e recria o schema `public` desse banco. Instruções bash/PowerShell, proteções e garantias: [testes de integração PostgreSQL 16](docs/testes-integracao-postgresql.md).
 
@@ -476,6 +478,8 @@ Resposta **201**:
 ```
 
 O corpo aceita somente `doctorId`, `patientId` e `startsAt` com offset de fuso. O servidor calcula `endsAt` a partir da duração do turno. O início deve cair no dia/turno local da escala em `America/Sao_Paulo`, alinhar com a grade e permitir que a consulta inteira termine até o fim do turno. Médico ou paciente inexistente (ou paciente removido) retorna **404** `RECURSO_NAO_ENCONTRADO`; horário fora da escala retorna **422** `HORARIO_FORA_DA_ESCALA`; conflito com consulta ativa do médico retorna **409** `HORARIO_INDISPONIVEL`; conflito com consulta ativa do paciente, **409** `PACIENTE_INDISPONIVEL`. Intervalos que apenas encostam são aceitos. Consultas canceladas não bloqueiam horários.
+
+Dentro da mesma transação, o repositório bloqueia primeiro médico e depois paciente e seleciona os períodos candidatos não cancelados, com parâmetros por titular e janela temporal. Retorna somente os dados de período necessários à regra. O service aplica `periodsOverlap` primeiro para o médico e depois para o paciente, antes de gravar pelo mesmo contexto transacional. O filtro SQL mantém a seleção eficiente; a decisão de negócio também é executada em TypeScript e exercitada sem banco nos testes unitários.
 
 A criação bloqueia as linhas do médico e do paciente na mesma transação, sempre nessa ordem, e faz validações e gravação com o `EntityManager` transacional. Isso serializa concorrência pelo mesmo médico e também pelo mesmo paciente em médicos diferentes.
 

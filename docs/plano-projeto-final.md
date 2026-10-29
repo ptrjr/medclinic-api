@@ -27,7 +27,7 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 
 As issues já têm descrições e critérios de aceitação. Criar um **GitHub Project público** e adicionar essas issues, com Backlog, A fazer, Em andamento, Em revisão e Concluído. Vincular cada PR ao card e mover o status durante o desenvolvimento. As ferramentas conectadas desta execução não oferecem criação de GitHub Projects ou configuração de proteção de branch; essas duas configurações ainda precisam ser feitas no GitHub.
 
-Meta de versionamento: **20 commits reais e pelo menos 6 PRs incorporados com checks verdes**, conforme a rubrica de nota máxima. Os commits devem acompanhar mudanças reais; não criar commits vazios para preencher contagem.
+Requisito do documento fornecido: **20 commits reais e 6 PRs**. A entrega deve comprovar PRs incorporados com checks verdes. Os commits devem acompanhar mudanças reais; não criar commits vazios para preencher contagem. Essa quantidade não é uma divergência pendente de confirmação.
 
 ## Rastreabilidade da avaliação anterior
 
@@ -45,23 +45,25 @@ Meta de versionamento: **20 commits reais e pelo menos 6 PRs incorporados com ch
 
 ## Casos mínimos de teste da proposta
 
-| Caso exigido                                      | Etapa                          |
-| ------------------------------------------------- | ------------------------------ |
-| Login inválido e comparação por hash              | Implementado na primeira etapa |
-| Cinco cenários de sobreposição de períodos        | Agendamentos                   |
-| Criação válida e cinco falhas de turno/conflito   | Agendamentos                   |
-| Turnos sobrepostos recusados e encostados aceitos | Implementado em Escalas        |
-| Transição válida e inválida                       | Agendamentos                   |
-| Prontuário com vínculo e sem vínculo              | Implementado em Prontuários    |
+| Caso exigido                                      | Etapa                                                                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------- |
+| Login inválido e comparação por hash              | Implementado na primeira etapa                                             |
+| Cinco cenários de sobreposição de períodos        | Implementado em unidade no service de Agendamentos (revisão de 28/10/2026) |
+| Criação válida e cinco falhas de turno/conflito   | Agendamentos                                                               |
+| Turnos sobrepostos recusados e encostados aceitos | Implementado em Escalas                                                    |
+| Transição válida e inválida                       | Agendamentos                                                               |
+| Prontuário com vínculo e sem vínculo              | Implementado em Prontuários                                                |
 
 O recorte de cobertura inclui todos os arquivos `.service.ts` e `.rules.ts`, mesmo os novos ainda sem teste. Cada métrica precisa continuar em pelo menos 80%.
 
-A criação de agendamentos bloqueia médico e paciente e usa apenas o EntityManager transacional. Além da verificação histórica em PGlite por TCP, a suíte de integração passou em PostgreSQL 16.15 real no Docker em 21/10/2026, observando contenção entre conexões independentes. Mocks unitários não comprovam o bloqueio transacional. Evidências e execução reproduzível: [testes de integração PostgreSQL 16](testes-integracao-postgresql.md). Antes da publicação, revisar também os cinco cenários mínimos de sobreposição em testes unitários.
+A criação de agendamentos bloqueia médico e paciente e usa apenas o EntityManager transacional. O repositório seleciona períodos candidatos não cancelados por titular e janela temporal; o service aplica a regra de produção `a.startsAt < b.endsAt && b.startsAt < a.endsAt` antes de gravar. A revisão de 28/10/2026 acrescenta a matriz unitária para médico e paciente: antes/depois, bordas encostadas, contenção nas duas direções, cruzamento de cada borda e igualdade, além de ausência de gravação em conflito e prioridade do médico. Os dublês retornam períodos e não calculam interseção. Evidências: [Agendamentos](verificacao-agendamentos.md).
 
-## Divergências do enunciado
+Além da verificação histórica em PGlite por TCP, a suíte de integração passou em PostgreSQL 16.15 real no Docker em 21/10/2026, observando contenção entre conexões independentes. Mocks unitários não comprovam o bloqueio transacional. A suíte preserva esses cenários e acrescenta matrizes de períodos e exclusão de canceladas para médico e paciente. Resultados por execução e instruções: [testes de integração PostgreSQL 16](testes-integracao-postgresql.md).
 
-1. **Contagem de commits/PRs:** seção 4.7 fala em 10 commits e 3 PRs; a rubrica da seção 5 exige 20 e 6 para nota máxima. Adotamos 20/6.
-2. **Escala:** o título e a tabela de erros do PUT na seção 4.9.5 indicam somente admin, mas o resumo inclui admin e doctor. A implementação segue a seção detalhada: somente admin altera, qualquer perfil autenticado lê. Confirmar a divergência com o professor antes da entrega; se doctor puder alterar, limitar à própria escala e acrescentar testes de posse.
+## Requisitos confirmados e decisões do enunciado
+
+1. **Contagem de commits/PRs:** o documento fornecido exige 20 commits reais e 6 PRs. Requisito definido, sem pendência de confirmação; a comprovação do histórico e dos checks continua na lista de entrega.
+2. **Escala:** o documento fornecido permite alteração somente por admin. A implementação segue esse requisito; qualquer perfil autenticado lê. Não há pendência de confirmação de permissão para doctor alterar escala.
 3. **Erro 500:** RF11 exige envelope até 500, mas o catálogo não define código para falha interna. Implementamos `ERRO_INTERNO` apenas para erro inesperado e registramos o erro no servidor. Confirmar esse literal antes da entrega.
 4. **Admin inicial:** o feedback anterior sugeria admin fixo na migration; RP07 da etapa final permite script de seed e exige credenciais por ambiente. O seed segue RP07, sem senha de produção versionada.
 

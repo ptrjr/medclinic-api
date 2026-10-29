@@ -123,6 +123,57 @@ function fixture() {
 }
 
 describe('AppointmentService.create', () => {
+  describe.each([
+    ['médico', 'findDoctorConflictCandidates', 'HORARIO_INDISPONIVEL'],
+    ['paciente', 'findPatientConflictCandidates', 'PACIENTE_INDISPONIVEL'],
+  ] as const)('sobreposição para %s', (_owner, candidateMethod, errorCode) => {
+    // Requested period is 11:00–11:30 UTC, calculated from the real shift.
+    it.each([
+      ['completamente antes', '10:00', '10:30', false],
+      ['completamente depois', '12:00', '12:30', false],
+      ['encosta no início', '10:30', '11:00', false],
+      ['encosta no fim', '11:30', '12:00', false],
+      ['existente contido no novo', '11:10', '11:20', true],
+      ['novo contido no existente', '10:30', '12:00', true],
+      ['cruza o início', '10:45', '11:15', true],
+      ['cruza o fim', '11:15', '11:45', true],
+      ['intervalos iguais', '11:00', '11:30', true],
+    ] as const)('%s', async (_scenario, start, end, conflicts) => {
+      const f = fixture();
+      f.transaction[candidateMethod].mockResolvedValue([
+        {
+          startsAt: new Date(`2026-10-20T${start}:00Z`),
+          endsAt: new Date(`2026-10-20T${end}:00Z`),
+        },
+      ]);
+
+      const result = f.service.create(createAppointmentInput, admin);
+      if (conflicts) {
+        await expect(result).rejects.toMatchObject({ code: errorCode });
+        expect(f.transaction.create).not.toHaveBeenCalled();
+      } else {
+        await expect(result).resolves.toMatchObject({ id: appointment.id });
+        expect(f.transaction.create).toHaveBeenCalledOnce();
+      }
+      expect(f.transaction[candidateMethod]).toHaveBeenCalledWith(
+        appointment.startsAt,
+        appointment.endsAt,
+      );
+    });
+
+    it('examina candidatos posteriores ao primeiro período livre', async () => {
+      const f = fixture();
+      f.transaction[candidateMethod].mockResolvedValue([
+        { startsAt: new Date('2026-10-20T10:00:00Z'), endsAt: appointment.startsAt },
+        appointment,
+      ]);
+      await expect(f.service.create(createAppointmentInput, admin)).rejects.toMatchObject({
+        code: errorCode,
+      });
+      expect(f.transaction.create).not.toHaveBeenCalled();
+    });
+  });
+
   it('valida e cria dentro do contexto de bloqueio com endsAt calculado', async () => {
     const f = fixture();
     await expect(f.service.create(createAppointmentInput, admin)).resolves.toEqual({
@@ -137,11 +188,11 @@ describe('AppointmentService.create', () => {
       { doctorId: appointment.doctorId, patientId: appointment.patientId },
     ]);
     expect(f.transaction.getWorkShifts).toHaveBeenCalledOnce();
-    expect(f.transaction.hasDoctorConflict).toHaveBeenCalledWith(
+    expect(f.transaction.findDoctorConflictCandidates).toHaveBeenCalledWith(
       appointment.startsAt,
       appointment.endsAt,
     );
-    expect(f.transaction.hasPatientConflict).toHaveBeenCalledWith(
+    expect(f.transaction.findPatientConflictCandidates).toHaveBeenCalledWith(
       appointment.startsAt,
       appointment.endsAt,
     );
@@ -183,21 +234,21 @@ describe('AppointmentService.create', () => {
     await expect(f.service.create(createAppointmentInput, admin)).rejects.toMatchObject({
       code: 'HORARIO_FORA_DA_ESCALA',
     });
-    expect(f.transaction.hasDoctorConflict).not.toHaveBeenCalled();
+    expect(f.transaction.findDoctorConflictCandidates).not.toHaveBeenCalled();
   });
   it('prioriza conflito do médico sobre conflito do paciente', async () => {
     const f = fixture();
-    f.transaction.hasDoctorConflict.mockResolvedValue(true);
-    f.transaction.hasPatientConflict.mockResolvedValue(true);
+    f.transaction.findDoctorConflictCandidates.mockResolvedValue([appointment]);
+    f.transaction.findPatientConflictCandidates.mockResolvedValue([appointment]);
     await expect(f.service.create(createAppointmentInput, admin)).rejects.toMatchObject({
       code: 'HORARIO_INDISPONIVEL',
     });
-    expect(f.transaction.hasPatientConflict).not.toHaveBeenCalled();
+    expect(f.transaction.findPatientConflictCandidates).not.toHaveBeenCalled();
     expect(f.transaction.create).not.toHaveBeenCalled();
   });
   it('recusa conflito do paciente depois de médico livre', async () => {
     const f = fixture();
-    f.transaction.hasPatientConflict.mockResolvedValue(true);
+    f.transaction.findPatientConflictCandidates.mockResolvedValue([appointment]);
     await expect(f.service.create(createAppointmentInput, secretary)).rejects.toMatchObject({
       code: 'PACIENTE_INDISPONIVEL',
     });

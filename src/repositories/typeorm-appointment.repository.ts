@@ -5,6 +5,7 @@ import {
   type Appointment,
   type AppointmentListQuery,
   type AppointmentPage,
+  type AppointmentPeriod,
   type NewAppointment,
 } from '../domain/appointment';
 import { AppointmentEntity } from '../entities/appointment.entity';
@@ -43,10 +44,10 @@ export class TypeOrmAppointmentRepository implements AppointmentRepositoryPort {
         patientExists: patient !== null,
         getWorkShifts: async () =>
           (await manager.getRepository(WorkScheduleEntity).findOneBy({ doctorId }))?.shifts ?? [],
-        hasDoctorConflict: (startsAt, endsAt) =>
-          this.hasConflict(appointments, 'doctorId', doctorId, startsAt, endsAt),
-        hasPatientConflict: (startsAt, endsAt) =>
-          this.hasConflict(appointments, 'patientId', patientId, startsAt, endsAt),
+        findDoctorConflictCandidates: (startsAt, endsAt) =>
+          this.findConflictCandidates(appointments, 'doctorId', doctorId, startsAt, endsAt),
+        findPatientConflictCandidates: (startsAt, endsAt) =>
+          this.findConflictCandidates(appointments, 'patientId', patientId, startsAt, endsAt),
         create: (input) => this.create(manager, input),
       };
       return operation(transaction);
@@ -96,21 +97,23 @@ export class TypeOrmAppointmentRepository implements AppointmentRepositoryPort {
     return result.affected === 1;
   }
 
-  private async hasConflict(
+  private async findConflictCandidates(
     appointments: Repository<AppointmentEntity>,
     field: 'doctorId' | 'patientId',
     ownerId: string,
     startsAt: Date,
     endsAt: Date,
-  ): Promise<boolean> {
-    const count = await appointments
+  ): Promise<AppointmentPeriod[]> {
+    // Keep SQL preselection bounded; the business layer decides overlap.
+    const candidates = await appointments
       .createQueryBuilder('appointment')
+      .select(['appointment.startsAt', 'appointment.endsAt'])
       .where(`appointment.${field} = :ownerId`, { ownerId })
       .andWhere('appointment.status <> :cancelled', { cancelled: AppointmentStatus.CANCELLED })
       .andWhere('appointment.startsAt < :endsAt', { endsAt })
       .andWhere('appointment.endsAt > :startsAt', { startsAt })
-      .getCount();
-    return count > 0;
+      .getMany();
+    return candidates.map(({ startsAt, endsAt }) => ({ startsAt, endsAt }));
   }
 
   private async create(manager: EntityManager, input: NewAppointment): Promise<Appointment> {
