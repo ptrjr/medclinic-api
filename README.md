@@ -34,7 +34,7 @@ Implementado nesta etapa:
 O módulo de Pacientes foi ajustado ao contrato literal da seção 4.9.3. O corpo de cadastro contém apenas `name` e `cpf`; o PATCH altera apenas `name`. Campos adicionais da versão anterior permanecem preservados no banco, mas não integram a API pública.
 
 Backlog: [issues do projeto](https://github.com/ptrjr/medclinic-api/issues). Plano detalhado: [docs/plano-projeto-final.md](docs/plano-projeto-final.md).
-Board público: ainda precisa ser criado e vinculado às issues; a lista de issues não substitui o board exigido na avaliação.
+Board público: [MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1), vinculado a este repositório. A visualização **Board** usa os estados Backlog, A fazer, Em andamento, Em revisão e Concluído. A organização inicial foi feita em **28/10/2026**, com base nas issues e nos PRs incorporados; não representa movimentações históricas do board. Publicação, validação funcional completa e conferência pública continuam pendentes.
 
 ## Tecnologias
 
@@ -580,14 +580,17 @@ Os erros conhecidos seguem o catálogo da seção 4.9.1 da proposta. Erros inesp
 
 ## CI e publicação
 
-`.github/workflows/pr-workflow.yml` roda em PRs para `main` com Node 22: instalação por `npm ci`, lint, formatação, tipagem, build e cobertura. O job tem nome estável `validate`.
+`.github/workflows/pr-workflow.yml` roda em PRs para `main` com Node 22: instalação por `npm ci`, lint, formatação, tipagem, build e cobertura no job `validate`, além dos jobs `docker build` e `integration (PostgreSQL 16)`.
 
-Após o primeiro check verde, ative em **Settings → Branches → main**:
+Proteção da `main` configurada e relida pela API do GitHub em **28/10/2026**:
 
-- Require a pull request before merging.
-- Require status checks to pass before merging, selecionando `validate`.
+- Pull request obrigatório, sem exigir aprovação de outro revisor ou do autor.
+- Checks obrigatórios: `validate`, `docker build` e `integration (PostgreSQL 16)`, vinculados ao GitHub Actions (App ID `15368`). Os nomes e a origem foram conferidos nos checks aprovados do [PR #18](https://github.com/ptrjr/medclinic-api/pull/18), incorporado à `main`.
+- Branch precisa estar atualizada com a `main` antes do merge (`strict: true`).
+- Regras aplicadas também ao administrador (`enforce_admins: true`), sem exceções de bypass configuradas.
+- Force push e exclusão da `main` bloqueados. Merge queue e histórico linear obrigatório permanecem desativados.
 
-O workflow não ativa proteção de branch sozinho. Sua ativação e o board público permanecem pendentes.
+O workflow executa os checks; a proteção da branch exige seus resultados. O [Project público](https://github.com/users/ptrjr/projects/1) reúne as issues existentes, com PRs relacionados no campo `PRs e evidências`. Os detalhes da configuração e as pendências estão no [plano](docs/plano-projeto-final.md).
 
 `.github/workflows/deploy.yml` roda somente em push na `main`: publica a imagem multi-stage no GHCR. Na primeira execução, o deploy fica desativado para permitir a criação do serviço a partir dessa imagem. Depois de configurar o Render, o secret do hook e a variável de repositório `RENDER_DEPLOY_ENABLED=true`, passa a acionar o Render com o digest imutável publicado. O workflow de PR também verifica o build Docker sem publicar imagens. A configuração e a conferência estão detalhadas em [publicação no Render](docs/publicacao-render.md). Nenhuma URL pública ou execução de deploy é declarada como concluída nesta etapa.
 
