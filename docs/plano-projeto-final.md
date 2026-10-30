@@ -15,19 +15,19 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 
 ## Entregas
 
-| Ordem | Entrega / issue                                                               | Branch sugerida               | Estado inicial     | Aceitação principal                                  |
-| ----- | ----------------------------------------------------------------------------- | ----------------------------- | ------------------ | ---------------------------------------------------- |
-| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec`      | Concluído (PR #8)  | Nove correções; contrato de auth; testes e CI        |
-| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`               | Concluído (PR #12) | CRUD, CPF único, busca e paginação                   |
-| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`                | Concluído (PR #11) | Médico + usuário em uma transação; CRM único         |
-| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Concluído (PR #13) | Turnos sem sobreposição; agenda por período          |
-| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/appointments`           | Concluído (PR #14) | Validações, concorrência, posse e ciclo de status    |
-| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/medical-records`        | Concluído (PR #15) | Escrita e leitura conforme vínculo médico-paciente   |
-| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Em preparação      | Workflow pronto; falta configurar e comprovar deploy |
+| Ordem | Entrega / issue                                                               | Branch sugerida               | Estado registrado            | Aceitação principal                                  |
+| ----- | ----------------------------------------------------------------------------- | ----------------------------- | ---------------------------- | ---------------------------------------------------- |
+| 1     | [Base segura e CI #1](https://github.com/ptrjr/medclinic-api/issues/1)        | `feat/base-segura-sctec`      | Concluído (PR #8)            | Nove correções; contrato de auth; testes e CI        |
+| 2     | [Pacientes #2](https://github.com/ptrjr/medclinic-api/issues/2)               | `feat/patients`               | Concluído (PR #12)           | CRUD, CPF único, busca e paginação                   |
+| 3     | [Médicos #3](https://github.com/ptrjr/medclinic-api/issues/3)                 | `feat/doctors`                | Concluído (PR #11)           | Médico + usuário em uma transação; CRM único         |
+| 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Concluído (PR #13)           | Turnos sem sobreposição; agenda por período          |
+| 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/appointments`           | Concluído (PR #14)           | Validações, concorrência, posse e ciclo de status    |
+| 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/medical-records`        | Concluído (PR #15)           | Escrita e leitura conforme vínculo médico-paciente   |
+| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Publicada; pendências finais | Inatividade, revisão de rede e evidências de entrega |
 
 O [Project público MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1) foi criado e vinculado a `ptrjr/medclinic-api` em **28/10/2026**, após confirmar a ausência de Project existente na conta. A visualização **Board** tem colunas pelo campo `Status`: Backlog, A fazer, Em andamento, Em revisão e Concluído. As sete issues existentes foram adicionadas sem duplicação; o campo `PRs e evidências` associa os PRs relevantes e os limites de cada entrega.
 
-A organização inicial foi realizada agora, com base em implementação, estado das issues e PRs incorporados; não foram inventadas movimentações ou datas históricas do board. Issues #1–#6 estão em **Concluído**, com evidências nos PRs #8–#16 e na correção de agendamentos do #18, conforme cada card. A issue #7 permanece **Em andamento**: o PR #17 prepara a automação, mas publicação e demais evidências de entrega ainda estão pendentes. Dois cards de rascunho, somente no Project, explicitam **Validação funcional completa da API** em **A fazer** e **Conferência pública da API publicada** em **Backlog**, dependente da publicação. Os estados Em revisão e as futuras movimentações serão usados quando houver trabalho real nessas condições.
+A organização inicial foi feita em 28/10/2026, com base em implementação, estado das issues e PRs incorporados; não foram inventadas movimentações ou datas históricas do board. Na consulta de 30/10/2026, issues #1–#6 estão em **Concluído**, com evidências nos PRs #8–#16 e na correção de agendamentos do #18. A issue #7 permanece **Em andamento** para as evidências finais, apesar da publicação inicial confirmada abaixo. Os cards de rascunho **Validação funcional completa da API** e **Conferência pública da API publicada** estão, respectivamente, em **Em revisão** e **Backlog**. A publicação inicial não encerra a conferência pública completa nem as demais pendências de entrega.
 
 Requisito do documento fornecido: **20 commits reais e 6 PRs**. A entrega deve comprovar PRs incorporados com checks verdes. Os commits devem acompanhar mudanças reais; não criar commits vazios para preencher contagem. Essa quantidade não é uma divergência pendente de confirmação.
 
@@ -47,7 +47,7 @@ A autenticação do GitHub CLI confirmou a conta `ptrjr`, permissão `ADMIN` no 
 
 ## Validação funcional local — 29/10/2026
 
-O PR [#19](https://github.com/ptrjr/medclinic-api/pull/19) foi incorporado por merge commit em `3258c55efae62c9ae4f9afac8a9f523327e5dedb`, depois de confirmar o head esperado e os três checks aprovados, sem bypass. A `main` foi atualizada por fast-forward e a ETAPA 3 está na branch `test/validacao-funcional-completa`, preparada para revisão e versionamento em PR próprio.
+O PR [#19](https://github.com/ptrjr/medclinic-api/pull/19) foi incorporado por merge commit em `3258c55efae62c9ae4f9afac8a9f523327e5dedb`, depois de confirmar o head esperado e os três checks aprovados, sem bypass. A ETAPA 3 foi desenvolvida na branch `test/validacao-funcional-completa` e incorporada pelo PR #20, conforme o registro de publicação abaixo.
 
 Foi consultado o [enunciado atual em `7fa5d59e0de3a637a3161a4373b5fcbb92a88b9d`](https://github.com/marcomoura-senai/nestjs-clinica/blob/7fa5d59e0de3a637a3161a4373b5fcbb92a88b9d/README.md). Essa referência ainda diverge internamente entre a seção detalhada 4.9.5 (somente admin altera escala) e o resumo 4.9.9 (inclui doctor), e entre 4.7 (10/3) e a rubrica (20/6). Isso não altera as decisões explícitas anteriores: somente admin altera escala e a meta de entrega continua em 20 commits reais e 6 PRs. As divergências foram registradas antes dos testes; o comportamento da API foi preservado.
 
@@ -55,9 +55,32 @@ A matriz própria executou **509 verificações aprovadas**, com **437 requisiç
 
 A suíte transacional existente também aprovou **8 testes**, incluindo rollback e contenção observada entre conexões independentes. A suíte sem banco aprovou **432 testes**, com **100% nas quatro métricas** do recorte original de services/rules. Não foi comprovado defeito da aplicação: houve uma premissa incorreta no executor intermediário, corrigida conforme o formato da agenda, seguida de nova execução completa. O ambiente descartável foi limpo e removido.
 
-Relatório, comandos, matriz de cada caso e limitações: [verificação funcional completa](verificacao-funcional-completa.md). O card da validação segue para **Em revisão**, com as mudanças locais prontas para revisão; não foi marcado Concluído. Não houve execução da bateria privada do professor, nem conferência pública. O merge do #19 acionou a [publicação da imagem](https://github.com/ptrjr/medclinic-api/actions/runs/40905014779); o job `deploy Render` foi ignorado (`skipped`), sem alterar variáveis ou secrets. Publicação da API, banco gerenciado com SSL, URL pública e credenciais de avaliação continuam pendentes.
+Relatório, comandos, matriz de cada caso e limitações: [verificação funcional completa](verificacao-funcional-completa.md). O card da validação segue em **Em revisão**; não foi marcado Concluído. Naquela execução local, não houve bateria privada do professor nem conferência pública. O merge do #19 acionou a [publicação da imagem](https://github.com/ptrjr/medclinic-api/actions/runs/40905014779); o job `deploy Render` foi ignorado (`skipped`), sem alterar variáveis ou secrets. Publicação da API, banco gerenciado e URL pública estavam pendentes naquele registro; o estado posterior está na seção seguinte.
 
 A revisão pré-versionamento reforçou somente o executor: recusa de schema preenchido antes de limpar e encerramento do servidor com timeout e fallback. Dois ensaios negativos controlados comprovaram preservação de uma tabela sentinela e limpeza após falha de bootstrap; ambos liberaram conexões e advisory lock. A matriz inteira foi então repetida, mantendo os **509 resultados aprovados**. Os ensaios de segurança são registrados separadamente, sem inflar essa contagem.
+
+## Publicação e validação inicial — 30/10/2026
+
+API pública: [https://medclinic-api-7n4q.onrender.com](https://medclinic-api-7n4q.onrender.com). Saúde: [GET /api/v1/health](https://medclinic-api-7n4q.onrender.com/api/v1/health), com HTTP 200 e `{"status":"ok"}` verificados diretamente em 30/10/2026 às 23:55:58 UTC.
+
+Evidências verificadas diretamente nesta revisão:
+
+- A `main` está no merge do [PR #20](https://github.com/ptrjr/medclinic-api/pull/20), commit `b62856f2d1e52595d6813a81e2b3a2bc69b28a00`.
+- A [tentativa 2 da execução 40974572290](https://github.com/ptrjr/medclinic-api/actions/runs/40974572290/attempts/2) terminou com `publish image` e `deploy Render` aprovados. A variável de ativação do repositório retornou `true`; nenhuma configuração foi alterada nesta revisão.
+- O deploy Render retornou **Live**, concluído em 30/10/2026 às 23:53:17 UTC, com a imagem `ghcr.io/ptrjr/medclinic-api@sha256:ace89b626de08f35424fed9956a076806dc5cc4e787043935d6ab054920b85df`. O digest e a revisão correspondem aos metadados do job de publicação. O aceite do acionamento foi acompanhado pela confirmação do estado no provedor e pelo health público.
+- O PostgreSQL retornou **Available**, versão **16**, plano **Free**, região **Virginia**, com expiração em **28/11/2026 às 23:56:11 UTC**. A configuração atual do Web Service também retornou plano **Free**, região **Virginia** e health check `/api/v1/health`.
+
+Confirmações fornecidas pelo usuário: Web Service e banco seguem nos planos Free; o primeiro deploy ficou Live; login do administrador e `GET /api/v1/users/me` retornando perfil `admin` funcionaram. Após a configuração do deploy automático, Live, health e login foram novamente confirmados pelo usuário. A credencial de banco anteriormente exposta foi substituída e a antiga foi desativada. Esta revisão não acessou credenciais nem repetiu testes autenticados, rotação ou uma sondagem TLS do banco. A validação de certificado permanece prevista na configuração de produção e não foi relaxada.
+
+As credenciais de avaliação serão fornecidas ao professor exclusivamente por canal privado. Nenhum valor de autenticação, conexão do banco ou acionamento de deploy integra este registro.
+
+Pendências e limites:
+
+- Testar após **mais de 15 minutos sem tráfego**, medir o despertar e conferir novamente health e login. O teste ainda não foi executado; não há garantia de resposta em até cinco segundos após inatividade.
+- Acompanhar o serviço e a expiração do banco durante todo o período de correção. O plano gratuito não representa disponibilidade permanente.
+- **Segurança de rede:** o usuário relatou a regra de **Workspace `0.0.0.0/0`** na tela do banco. O alcance efetivo dessa regra não foi inspecionado nesta revisão; ela não foi alterada e pode afetar outros recursos. A revisão da regra permanece pendente. Não está comprovado que o banco esteja restrito apenas às duas faixas específicas.
+- A bateria privada do professor **não foi executada**. Os 509 resultados anteriores são da matriz local própria; os testes iniciais públicos não equivalem à conferência funcional pública completa.
+- A submissão ao AVA e a entrega das credenciais pelo canal privado permanecem pendentes.
 
 ## Rastreabilidade da avaliação anterior
 
@@ -99,7 +122,7 @@ Além da verificação histórica em PGlite por TCP, a suíte de integração pa
 
 ## Antes da entrega no AVA
 
-Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários implementados sobre `806019f`, com vínculo por consultas `in_progress`/`done`, autoria pelo médico autenticado e acesso conforme RN14; incorporados pelo PR #15. Naquela etapa, a suíte registrava 384 testes e 100% nas quatro métricas de services/rules; os 42 testes novos estão em um único arquivo unitário. Foram verificadas adicionalmente 63 respostas HTTP com persistência PGlite e a migration de prontuários. Em 21/10/2026, os testes transacionais de médicos e agendamentos passaram em PostgreSQL 16.15 real, com 394 testes na suíte unitária e seis na integração. A publicação continua pendente. Evidências: [Agendamentos](verificacao-agendamentos.md), [Prontuários](verificacao-prontuarios.md) e [Integração PostgreSQL 16](testes-integracao-postgresql.md).
+Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários implementados sobre `806019f`, com vínculo por consultas `in_progress`/`done`, autoria pelo médico autenticado e acesso conforme RN14; incorporados pelo PR #15. Naquela etapa, a suíte registrava 384 testes e 100% nas quatro métricas de services/rules; os 42 testes novos estão em um único arquivo unitário. Foram verificadas adicionalmente 63 respostas HTTP com persistência PGlite e a migration de prontuários. Em 21/10/2026, os testes transacionais de médicos e agendamentos passaram em PostgreSQL 16.15 real, com 394 testes na suíte unitária e seis na integração. A publicação ainda estava pendente nessas revisões históricas; o registro de 30/10/2026 está acima. Evidências: [Agendamentos](verificacao-agendamentos.md), [Prontuários](verificacao-prontuarios.md) e [Integração PostgreSQL 16](testes-integracao-postgresql.md).
 
 - [ ] Todos os endpoints da seção 4.9 implementados e conferidos literalmente.
 - [x] Casos mínimos e cobertura de pelo menos 80% nas quatro métricas, reconferidos localmente em 29/10/2026: 432 testes e 100% em services/rules.
@@ -109,9 +132,11 @@ Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários impl
 - [ ] Registrar as próximas movimentações reais do board durante o trabalho, sem reconstruir histórico.
 - [x] Executar e registrar a validação funcional completa local: 509 verificações aprovadas em PostgreSQL 16.15, com evidências em revisão.
 - [ ] Fazer a conferência pública após publicação, incluindo disponibilidade e credenciais de avaliação.
-- [ ] Workflow `deploy.yml`, imagem de produção e deploy automático após merge (workflow preparado; falta primeira execução configurada).
-- [ ] Banco gerenciado com SSL, migrations e seed.
+- [x] Workflow `deploy.yml`, imagem de produção e deploy automático: jobs aprovados, deploy Live e health verificados em 30/10/2026; login após deploy confirmado pelo usuário.
+- [x] PostgreSQL 16 Free disponível no Render, com expiração registrada; bootstrap da aplicação confirmado pelo usuário com Live e login. Sondagem TLS não repetida nesta revisão.
 - [ ] URL pública disponível durante a correção, inclusive após inatividade.
-- [ ] Login do administrador de avaliação conferido.
-- [ ] README com URL, board, variáveis, arquitetura, comandos e respostas.
+- [x] Login do administrador de avaliação e perfil admin em `/api/v1/users/me` conferidos pelo usuário, inclusive após deploy automático.
+- [x] README com URL, board, variáveis, arquitetura, comandos e respostas.
+- [ ] Revisar o alcance da regra de Workspace `0.0.0.0/0`, sem presumir restrição apenas às duas faixas específicas.
+- [ ] Fornecer credenciais de avaliação ao professor por canal privado, sem publicá-las no GitHub.
 - [ ] Submeter repositório público, URL raiz da API, board e credenciais no AVA até 02/11/2026 às 22h.

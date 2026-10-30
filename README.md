@@ -6,7 +6,7 @@ Esta é a evolução do mini-projeto de autenticação da Semana 07. A proposta 
 
 ## Estado do projeto
 
-**Etapa 7 do projeto final: base segura, módulos clínicos, migrations, CI e automação de publicação preparada.**
+**Etapa 7 do projeto final: base segura, módulos clínicos, migrations, CI e API publicada no Render, com validação inicial registrada.**
 
 Implementado nesta etapa:
 
@@ -29,12 +29,12 @@ Implementado nesta etapa:
 - Agendamento por `admin`/`secretary`, com duração calculada pela escala, bloqueios transacionais para médico e paciente, prevenção de conflitos e ciclo de status autorizado.
 - Prontuário com autoria pelo médico autenticado, leitura/escrita por vínculo de atendimento, leitura administrativa e paginação.
 
-**A API ainda não foi publicada.** A automação de imagem e deploy está preparada, mas a URL pública, o banco gerenciado e as credenciais de avaliação só serão declarados após a primeira execução real em produção.
+**API pública:** [https://medclinic-api-7n4q.onrender.com](https://medclinic-api-7n4q.onrender.com). O endpoint [GET /api/v1/health](https://medclinic-api-7n4q.onrender.com/api/v1/health) retornou HTTP 200 com `{"status":"ok"}` na verificação direta de 30/10/2026. A publicação inicial e seus limites estão registrados em [CI e publicação](#ci-e-publicação).
 
 O módulo de Pacientes foi ajustado ao contrato literal da seção 4.9.3. O corpo de cadastro contém apenas `name` e `cpf`; o PATCH altera apenas `name`. Campos adicionais da versão anterior permanecem preservados no banco, mas não integram a API pública.
 
 Backlog: [issues do projeto](https://github.com/ptrjr/medclinic-api/issues). Plano detalhado: [docs/plano-projeto-final.md](docs/plano-projeto-final.md).
-Board público: [MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1), vinculado a este repositório. A visualização **Board** usa os estados Backlog, A fazer, Em andamento, Em revisão e Concluído. A organização inicial foi feita em **28/10/2026**, com base nas issues e nos PRs incorporados; não representa movimentações históricas do board. A validação funcional **local** foi executada em 29/10/2026 e está em revisão, com [matriz e evidências](docs/verificacao-funcional-completa.md). Publicação e conferência pública continuam pendentes.
+Board público: [MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1), vinculado a este repositório. A visualização **Board** usa os estados Backlog, A fazer, Em andamento, Em revisão e Concluído. A organização inicial foi feita em **28/10/2026**, com base nas issues e nos PRs incorporados; não representa movimentações históricas do board. A validação funcional **local** foi executada em 29/10/2026 e está em revisão, com [matriz e evidências](docs/verificacao-funcional-completa.md). A publicação inicial foi confirmada; disponibilidade após inatividade, revisão de rede e conferência pública completa continuam pendentes.
 
 ## Tecnologias
 
@@ -598,6 +598,16 @@ Proteção da `main` configurada e relida pela API do GitHub em **28/10/2026**:
 
 O workflow executa os checks; a proteção da branch exige seus resultados. O [Project público](https://github.com/users/ptrjr/projects/1) reúne as issues existentes, com PRs relacionados no campo `PRs e evidências`. Os detalhes da configuração e as pendências estão no [plano](docs/plano-projeto-final.md).
 
-`.github/workflows/deploy.yml` roda somente em push na `main`: publica a imagem multi-stage no GHCR. Na primeira execução, o deploy fica desativado para permitir a criação do serviço a partir dessa imagem. Depois de configurar o Render, o secret do hook e a variável de repositório `RENDER_DEPLOY_ENABLED=true`, passa a acionar o Render com o digest imutável publicado. O workflow de PR também verifica o build Docker sem publicar imagens. A configuração e a conferência estão detalhadas em [publicação no Render](docs/publicacao-render.md). Nenhuma URL pública ou execução de deploy é declarada como concluída nesta etapa.
+`.github/workflows/deploy.yml` roda somente em push na `main`: publica a imagem multi-stage no GHCR e, com a ativação configurada, aciona o Render com o digest imutável publicado. O workflow de PR verifica o build Docker sem publicar imagens. O procedimento está em [publicação no Render](docs/publicacao-render.md).
+
+Registro de publicação em **30/10/2026**:
+
+- **Verificado diretamente:** a [tentativa 2 do workflow](https://github.com/ptrjr/medclinic-api/actions/runs/40974572290/attempts/2), referente à `main` em `b62856f2d1e52595d6813a81e2b3a2bc69b28a00`, aprovou `publish image` e `deploy Render`. O Render retornou deploy **Live**, com o mesmo digest publicado. O health público retornou HTTP 200 e o corpo esperado.
+- **Informado pelo usuário:** o primeiro deploy ficou Live; login administrativo e `GET /api/v1/users/me` com perfil `admin` funcionaram, inclusive após o deploy automático. A credencial de banco anteriormente exposta foi substituída e a antiga foi desativada. Esses testes autenticados e a rotação não foram repetidos nesta revisão documental.
+- **Infraestrutura:** Web Service Free e PostgreSQL 16 Free no Render, região Virginia. O banco expira em **28/11/2026 às 23:56:11 UTC**; acompanhar a disponibilidade até o término da correção. O plano gratuito não implica disponibilidade permanente. Os planos e a região dos dois recursos, a versão e a expiração do banco foram relidos pela CLI.
+- **Credenciais de avaliação:** serão fornecidas ao professor exclusivamente por canal privado, sem valores em documentação, issues ou PRs.
+- **Pendências:** teste após mais de 15 minutos de inatividade e medição do despertar; revisão da regra de Workspace `0.0.0.0/0` relatada pelo usuário na tela do banco, cujo alcance efetivo não foi inspecionado nesta revisão. A regra não foi alterada, pode afetar outros recursos e impede afirmar que o banco está restrito apenas às duas faixas específicas.
+
+A bateria privada do professor **não foi executada**. A validação inicial pública não substitui essa bateria nem a conferência completa; a submissão ao AVA permanece pendente. Evidências, digest e pendências detalhados no [plano](docs/plano-projeto-final.md#publicação-e-validação-inicial--30102026).
 
 Entrega prevista no enunciado: **02/11/2026 às 22h**. Consulte o [plano de entregas](docs/plano-projeto-final.md) antes de submeter ao AVA.
