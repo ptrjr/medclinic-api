@@ -23,7 +23,7 @@ Fonte: [proposta do professor](https://github.com/marcomoura-senai/nestjs-clinic
 | 4     | [Escalas e agenda #4](https://github.com/ptrjr/medclinic-api/issues/4)        | `feat/work-schedule-calendar` | Concluído (PR #13)           | Turnos sem sobreposição; agenda por período          |
 | 5     | [Agendamentos #5](https://github.com/ptrjr/medclinic-api/issues/5)            | `feat/appointments`           | Concluído (PR #14)           | Validações, concorrência, posse e ciclo de status    |
 | 6     | [Prontuários #6](https://github.com/ptrjr/medclinic-api/issues/6)             | `feat/medical-records`        | Concluído (PR #15)           | Escrita e leitura conforme vínculo médico-paciente   |
-| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Publicada; pendências finais | Inatividade, revisão de rede e evidências de entrega |
+| 7     | [Publicação e evidências #7](https://github.com/ptrjr/medclinic-api/issues/7) | `ci/publicacao`               | Publicada; pendências finais | Acompanhamento, conferência global de rede e entrega |
 
 O [Project público MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1) foi criado e vinculado a `ptrjr/medclinic-api` em **28/10/2026**, após confirmar a ausência de Project existente na conta. A visualização **Board** tem colunas pelo campo `Status`: Backlog, A fazer, Em andamento, Em revisão e Concluído. As sete issues existentes foram adicionadas sem duplicação; o campo `PRs e evidências` associa os PRs relevantes e os limites de cada entrega.
 
@@ -65,7 +65,7 @@ API pública: [https://medclinic-api-7n4q.onrender.com](https://medclinic-api-7n
 
 Evidências verificadas diretamente nesta revisão:
 
-- A `main` está no merge do [PR #20](https://github.com/ptrjr/medclinic-api/pull/20), commit `b62856f2d1e52595d6813a81e2b3a2bc69b28a00`.
+- Na publicação inicial, a `main` estava no merge do [PR #20](https://github.com/ptrjr/medclinic-api/pull/20), commit `b62856f2d1e52595d6813a81e2b3a2bc69b28a00`. A revisão documental seguinte foi incorporada pelo [PR #21](https://github.com/ptrjr/medclinic-api/pull/21), confirmado no commit `59492649c16602a04ba7488e439d85e87665ebff`, base desta preparação final.
 - A [tentativa 2 da execução 40974572290](https://github.com/ptrjr/medclinic-api/actions/runs/40974572290/attempts/2) terminou com `publish image` e `deploy Render` aprovados. A variável de ativação do repositório retornou `true`; nenhuma configuração foi alterada nesta revisão.
 - O deploy Render retornou **Live**, concluído em 30/10/2026 às 23:53:17 UTC, com a imagem `ghcr.io/ptrjr/medclinic-api@sha256:ace89b626de08f35424fed9956a076806dc5cc4e787043935d6ab054920b85df`. O digest e a revisão correspondem aos metadados do job de publicação. O aceite do acionamento foi acompanhado pela confirmação do estado no provedor e pelo health público.
 - O PostgreSQL retornou **Available**, versão **16**, plano **Free**, região **Virginia**, com expiração em **28/11/2026 às 23:56:11 UTC**. A configuração atual do Web Service também retornou plano **Free**, região **Virginia** e health check `/api/v1/health`.
@@ -76,11 +76,56 @@ As credenciais de avaliação serão fornecidas ao professor exclusivamente por 
 
 Pendências e limites:
 
-- Testar após **mais de 15 minutos sem tráfego**, medir o despertar e conferir novamente health e login. O teste ainda não foi executado; não há garantia de resposta em até cinco segundos após inatividade.
+- O usuário informou o teste de retomada registrado abaixo. Ele não é medição direta desta execução nem garantia de disponibilidade ou desempenho.
 - Acompanhar o serviço e a expiração do banco durante todo o período de correção. O plano gratuito não representa disponibilidade permanente.
-- **Segurança de rede:** o usuário relatou a regra de **Workspace `0.0.0.0/0`** na tela do banco. O alcance efetivo dessa regra não foi inspecionado nesta revisão; ela não foi alterada e pode afetar outros recursos. A revisão da regra permanece pendente. Não está comprovado que o banco esteja restrito apenas às duas faixas específicas.
+- **Segurança de rede:** a lista local do banco foi consultada somente em leitura, conforme análise abaixo. A regra global de Workspace relatada pelo usuário ainda precisa de confirmação no painel; nenhuma regra foi alterada.
 - A bateria privada do professor **não foi executada**. Os 509 resultados anteriores são da matriz local própria; os testes iniciais públicos não equivalem à conferência funcional pública completa.
 - A submissão ao AVA e a entrega das credenciais pelo canal privado permanecem pendentes.
+
+### Retomada após inatividade — relato de 30/10/2026
+
+O usuário informou que deixou a API sem acesso por **mais de 15 minutos** e observou:
+
+| Verificação                         | Resultado informado pelo usuário   |
+| ----------------------------------- | ---------------------------------- |
+| Primeiro health após a espera       | `status: ok` em **32,49 segundos** |
+| Segundo health                      | `status: ok` em **0,7 segundo**    |
+| Login administrativo após despertar | **Login OK**                       |
+
+Os tempos e o login não foram medidos nem repetidos nesta execução. Essa amostra indica retomada no teste do usuário, sem garantir disponibilidade contínua ou desempenho geral. O [plano Free do Render](https://render.com/docs/free#spinning-down-on-idle) suspende o Web Service após 15 minutos sem tráfego. O enunciado trata a retomada em RNF09 e o limite de cinco segundos **com a API já ativa** em RNF10; não se conclui aprovação desses requisitos na bateria de aceitação a partir de duas requisições. O PostgreSQL Free continua com expiração em **28/11/2026 às 23:56:11 UTC**; acompanhar API e banco durante a correção.
+
+### Revisão de rede — somente leitura
+
+A CLI autenticada retornou `ipAllowList` do banco com `74.220.49.0/24` e `74.220.57.0/24`, sem `0.0.0.0/0` nessa lista local. O inventário do workspace retornou somente `medclinic-api` e `medclinic-api-db`. Não foram acessados valores de conexão nem alteradas regras. A CLI 2.33.0 não expõe leitura das regras globais de Workspace; a linha global permanece como relato do usuário, sem confirmação direta do estado atual.
+
+Pela [documentação do Render](https://render.com/docs/inbound-ip-rules#combining-ip-rules), regras no mesmo nível permitem a união das faixas; entre níveis, todos precisam permitir a conexão. Portanto, `0.0.0.0/0` no Workspace permite qualquer IPv4 **nesse nível**, mas não amplia uma lista local mais restrita. Isso não prova acesso efetivo apenas pelas duas faixas: falta conferir o nível global no painel. Essas regras incidem no acesso externo, não na rede privada; autenticação e TLS continuam necessários.
+
+Possibilidades para uma execução futura, após autorização:
+
+- Conferir **Workspace > Network Access > Inbound IP Restrictions**, o plano do workspace e todos os níveis aplicáveis, sem salvar nesta revisão. O Render oferece controles globais nos planos Scale/Enterprise; não inferir o efeito de uma linha exibida apenas a partir do plano Free do banco.
+- Preservar a restrição específica do banco e conferir os CIDRs em **Web Service > Connect > Outbound**. As [faixas de saída são compartilhadas por região](https://render.com/docs/outbound-ip-addresses), não exclusivas desta API. Incluir somente origens administrativas necessárias, se houver, após avaliação.
+- Antes de restringir o Workspace, inventariar novamente todos os recursos e consumidores: uma regra global pode bloquear outros serviços, inclusive a API pública usada pelo professor. Não aplicar automaticamente as faixas de saída do backend à entrada HTTP pública.
+- Desabilitar o acesso externo e usar rede privada exige projeto separado: o procedimento atual usa endpoint externo com verificação de certificado, e o endpoint interno apresenta certificado autoassinado. Não trocar a conexão nem relaxar TLS para obter acesso. [Conexões PostgreSQL](https://render.com/docs/postgresql-creating-connecting#internal-connections).
+
+### Lista objetiva para o AVA
+
+Referência atual consultada: [enunciado em `dbab6ee4d46857df6ab0dfabf380319d3ce2604e`](https://github.com/marcomoura-senai/nestjs-clinica/blob/dbab6ee4d46857df6ab0dfabf380319d3ce2604e/README.md), seções 3, 4.3, 4.5–4.9 e 5.
+
+Na tarefa **Módulo 02 - Projeto Final Avaliativo**, até **02/11/2026 às 22h**, enviar:
+
+1. Repositório público: [ptrjr/medclinic-api](https://github.com/ptrjr/medclinic-api), cuja visibilidade foi confirmada diretamente no GitHub.
+2. URL **raiz** da API: [https://medclinic-api-7n4q.onrender.com](https://medclinic-api-7n4q.onrender.com).
+3. Board público: [MEDCLINIC API - Projeto final SCTEC](https://github.com/users/ptrjr/projects/1), com visibilidade pública confirmada diretamente.
+4. Credenciais do administrador de avaliação no campo privado do AVA, conferidas na API publicada antes de enviar; nenhum valor neste documento ou no GitHub.
+
+Antes de submeter:
+
+- Finalizar os PRs pretendidos e conferir checks e publicação resultante. O enunciado usa a última atualização do repositório como data final e não aceita mudanças depois da entrega. A submissão ainda **não foi realizada**.
+- Manter o repositório permanentemente público e API/banco disponíveis na correção, considerando despertar e expiração.
+- Conferir código, migrations, Dockerfile multi-stage, Compose, dois workflows, proteção da `main`, histórico real de branches/PRs e board com critérios de aceitação e links. Preservar o registro honesto da organização tardia do board.
+- Adotar o critério mais exigente da rubrica: **20 commits reais e 6 PRs incorporados com checks verdes**; a seção 4.7 menciona 10/3. Commits só de README não suprem conteúdo real. Não se auditou essa contagem nesta revisão.
+- Conferir README com execução, variáveis sem valores reais, arquitetura, modelagem, nomenclatura, comandos, cobertura e endpoints/perfis. `.env` fora do Git; `.env.example` completo sem segredos; banco criado por migrations, com `synchronize: false`.
+- Conferir contrato literal 4.9 e cobertura mínima de **80% nas quatro métricas** sobre regras de negócio. As evidências existentes são **432 testes sem banco**, **8 testes de integração PostgreSQL 16** e **509 verificações da matriz local própria**; não foram repetidas nesta mudança documental. A bateria privada do professor **não foi executada**.
 
 ## Rastreabilidade da avaliação anterior
 
@@ -135,8 +180,10 @@ Revisão de 19/10/2026: agendamentos incorporados pelo PR #14. Prontuários impl
 - [x] Workflow `deploy.yml`, imagem de produção e deploy automático: jobs aprovados, deploy Live e health verificados em 30/10/2026; login após deploy confirmado pelo usuário.
 - [x] PostgreSQL 16 Free disponível no Render, com expiração registrada; bootstrap da aplicação confirmado pelo usuário com Live e login. Sondagem TLS não repetida nesta revisão.
 - [ ] URL pública disponível durante a correção, inclusive após inatividade.
+- [x] Retomada após mais de 15 minutos sem acesso relatada pelo usuário em 30/10/2026: health em 32,49 s e 0,7 s; Login OK. Não é medição direta desta execução nem garantia geral.
 - [x] Login do administrador de avaliação e perfil admin em `/api/v1/users/me` conferidos pelo usuário, inclusive após deploy automático.
 - [x] README com URL, board, variáveis, arquitetura, comandos e respostas.
-- [ ] Revisar o alcance da regra de Workspace `0.0.0.0/0`, sem presumir restrição apenas às duas faixas específicas.
+- [x] Consultar somente em leitura a lista local do banco e documentar a composição dos níveis conforme o Render.
+- [ ] Confirmar no painel o estado atual e o alcance da regra de Workspace `0.0.0.0/0` antes de qualquer restrição global.
 - [ ] Fornecer credenciais de avaliação ao professor por canal privado, sem publicá-las no GitHub.
 - [ ] Submeter repositório público, URL raiz da API, board e credenciais no AVA até 02/11/2026 às 22h.
